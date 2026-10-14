@@ -35,7 +35,7 @@ class FakeDownloader:
         info = {"id": video_id, "title": f"Title {video_id}", "upload_date": "20240101"}
         (dest / f"{video_id}.mp4").write_bytes(b"video-" + video_id.encode())
         (dest / f"{video_id}.info.json").write_text(json.dumps(info), encoding="utf-8")
-        on_progress(50, 100)
+        on_progress(50, 100, 1000.0, 1.0)
         return DownloadResult(info, completed_files(dest))
 
 
@@ -44,14 +44,25 @@ class FakeUploader:
         self.items: dict[str, dict] = {}
         self.errors: list[Exception] = []
         self.confirm = True
+        self.clock: FakeClock | None = None
+        self.seen_local_files: list[bool] = []
 
     def has_credentials(self):
         return True
 
-    def upload(self, identifier, files, metadata):
+    def upload(self, identifier, files, metadata, md5s, on_progress=None, should_abort=None):
         if self.errors:
             raise self.errors.pop(0)
+        assert set(md5s) == {f.name for f in files}
+        total = sum(f.stat().st_size for f in files)
+        for done in (total // 2, total):
+            if self.clock is not None:
+                self.clock.now += 5
+            if on_progress:
+                on_progress(done, total)
+        self.seen_local_files.append(all(f.exists() for f in files))
         self.items[identifier] = {"metadata": metadata, "files": [f.name for f in files]}
+        return total
 
     def verify(self, identifier, md5s):
         return self.confirm and identifier in self.items

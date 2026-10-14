@@ -6,11 +6,13 @@ import hashlib
 import html
 import re
 from pathlib import Path
+from typing import Callable
 from urllib.parse import quote
 
 import internetarchive
 
 from . import __version__
+from .progress import Aborted
 
 # The first upload sends metadata in HTTP headers, and a very long header makes
 # the request fail. The full description is also in the uploaded .description file.
@@ -92,26 +94,54 @@ class Uploader:
     def has_credentials(self) -> bool:
         return bool(self.session.access_key and self.session.secret_key)
 
-    def upload(self, identifier: str, files: list[Path], metadata: dict) -> None:
+    def upload(
+        self,
+        identifier: str,
+        files: list[Path],
+        metadata: dict,
+        md5s: dict[str, str],
+        on_progress: Callable[[int, int], None] | None = None,
+        should_abort: Callable[[], bool] | None = None,
+    ) -> int:
+        """Upload the files that are not on the item yet. Returns the number of bytes sent.
+
+        on_progress gets (bytes sent, bytes to send) for all files together.
+        should_abort can stop the upload between two network writes by returning True.
+        """
         item = self.session.get_item(identifier)
         if item.exists and item.metadata.get("originalurl") != metadata["originalurl"]:
             raise IdentifierTaken(
                 f"https://archive.org/details/{identifier} already exists and holds other content."
                 " Use a different --prefix for this channel."
             )
-        responses = item.upload(
-            {path.name: str(path) for path in files},
-            metadata=metadata,
-            queue_derive=True,
-            verify=True,
-            checksum=True,
-            retries=10,
-            retries_sleep=30,
-        )
-        for response in responses:
-            # checksum=True returns an empty Response (no status) for files that are already there.
-            if response.status_code not in (None, 200):
-                raise RuntimeError(f"Upload failed: HTTP {response.status_code} {response.text[:200]}")
+        remote = {f.get("name"): f.get("md5") for f in item.files} if item.exists else {}
+        todo = [path for path in files if remote.get(path.name) != md5s[path.name]]
+        total = sum(path.stat().st_size for path in todo)
+        sent_before = 0
+        for index, path in enumerate(todo):
+            current = 0
+
+            def on_read(count: int | None) -> None:
+                nonlocal current
+                if should_abort is not None and should_abort():
+                    raise Aborted()
+                current = 0 if count is None else current + count
+                if on_progress is not None:
+                    on_progress(sent_before + current, total)
+
+            with _ProgressReader(path, on_read) as body:
+                # Content-MD5 makes the Internet Archive reject a file that arrives damaged.
+                item.upload_file(
+                    body,
+                    key=path.name,
+                    metadata=metadata,
+                    headers={"Content-MD5": md5s[path.name]},
+                    queue_derive=index == len(todo) - 1,
+                    retries=10,
+                    retries_sleep=30,
+                )
+            sent_before += path.stat().st_size
+        return total
 
     def verify(self, identifier: str, md5s: dict[str, str]) -> bool:
         """True when every uploaded file is in the item with the same MD5."""
@@ -122,3 +152,42 @@ class Uploader:
             return False
         remote = {f.get("name"): f.get("md5") for f in item.files}
         return all(remote.get(name) == md5 for name, md5 in md5s.items())
+
+
+class _ProgressReader:
+    """A read-only file that reports each read of the HTTP client.
+
+    A seek to the start means a new attempt (the client retries), so the count restarts.
+    """
+
+    def __init__(self, path: Path, on_read: Callable[[int | None], None]):
+        self._fh = open(path, "rb")
+        self._on_read = on_read
+        self.name = str(path)
+
+    def read(self, size: int = -1) -> bytes:
+        data = self._fh.read(size)
+        if data:
+            self._on_read(len(data))
+        return data
+
+    def seek(self, offset: int, whence: int = 0) -> int:
+        position = self._fh.seek(offset, whence)
+        if position == 0:
+            self._on_read(None)
+        return position
+
+    def tell(self) -> int:
+        return self._fh.tell()
+
+    def fileno(self) -> int:
+        return self._fh.fileno()
+
+    def close(self) -> None:
+        self._fh.close()
+
+    def __enter__(self) -> "_ProgressReader":
+        return self
+
+    def __exit__(self, *exc: object) -> None:
+        self.close()

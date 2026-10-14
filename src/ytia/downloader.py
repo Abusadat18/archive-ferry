@@ -13,7 +13,10 @@ from yt_dlp import YoutubeDL
 from yt_dlp.utils import DownloadError, parse_bytes
 
 from .config import Settings
+from .progress import Aborted
 from .ytdl import base_options
+
+__all__ = ["Aborted", "DownloadResult", "clean_info_json", "completed_files", "download_video", "find_info_json"]
 
 log = logging.getLogger("ytia.download")
 
@@ -38,11 +41,8 @@ _PRIVATE_KEYS = {
     "filepath",
 }
 
-ProgressCallback = Callable[[int, "int | None"], None]
-
-
-class Aborted(Exception):
-    """The user asked for an immediate pause during a download."""
+# (bytes done, bytes total, bytes per second, seconds left) for the stream that downloads now.
+ProgressCallback = Callable[[int, "int | None", "float | None", "float | None"], None]
 
 
 @dataclass
@@ -120,7 +120,12 @@ def download_video(
             raise Aborted()
         if status.get("status") == "downloading":
             total = status.get("total_bytes") or status.get("total_bytes_estimate")
-            on_progress(status.get("downloaded_bytes") or 0, int(total) if total else None)
+            on_progress(
+                status.get("downloaded_bytes") or 0,
+                int(total) if total else None,
+                status.get("speed"),
+                status.get("eta"),
+            )
 
     url = f"https://www.youtube.com/watch?v={video_id}"
     subtitles = settings.get_bool("subtitles")

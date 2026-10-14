@@ -66,6 +66,12 @@ _MIGRATIONS = [
         message  TEXT NOT NULL
     );
     """,
+    # Local files go away after the upload, so the row keeps what is needed to prove and show it.
+    """
+    ALTER TABLE videos ADD COLUMN size_bytes INTEGER;
+    ALTER TABLE videos ADD COLUMN uploaded_at REAL;
+    ALTER TABLE videos ADD COLUMN upload_seconds REAL;
+    """,
 ]
 
 

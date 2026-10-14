@@ -24,7 +24,8 @@ from .db import (
     UPLOADING,
     Database,
 )
-from .downloader import Aborted, completed_files, download_video, find_info_json
+from .downloader import completed_files, download_video, find_info_json
+from .progress import Aborted, Meter, fmt_duration, fmt_eta, fmt_size, fmt_speed
 
 log = logging.getLogger("ytia.worker")
 
@@ -32,6 +33,9 @@ RETRY_BASE_SECONDS = 5 * 60
 RETRY_MAX_SECONDS = 6 * 3600
 FIRST_CHECK_DELAY = 60
 CHECK_INTERVAL = 5 * 60
+# The local files are gone after the upload. If the Internet Archive never shows the
+# item, the worker downloads the video again and uploads it again.
+CONFIRM_TIMEOUT = 48 * 3600
 PROGRESS_INTERVAL = 2.0
 
 # Download errors that a retry cannot fix. `ytia retry --skipped` puts these videos back.
@@ -53,16 +57,6 @@ def _short_error(exc: BaseException) -> str:
     text = _ANSI.sub("", str(exc)).strip() or type(exc).__name__
     first = text.splitlines()[0].removeprefix("ERROR: ")
     return first[:500]
-
-
-def _size(num: float | None) -> str:
-    if not num:
-        return "?"
-    for unit in ("B", "KB", "MB", "GB"):
-        if num < 1024:
-            return f"{num:.0f} {unit}"
-        num /= 1024
-    return f"{num:.1f} TB"
 
 
 class Worker:
@@ -149,7 +143,12 @@ class Worker:
                 return
         try:
             self._upload(self.db.video(video_id))
+        except Aborted:
+            self._event("info", "Upload paused. The file that was not complete uploads again after resume.", video_id)
         except Exception as exc:
+            if self._abort_requested(force=True):
+                self._event("info", "Upload paused. The file that was not complete uploads again after resume.", video_id)
+                return
             self._fail(video_id, UPLOADING, exc)
 
     def _local_dir(self, row: sqlite3.Row) -> Path:
@@ -163,26 +162,36 @@ class Worker:
 
     def _download(self, row: sqlite3.Row) -> None:
         video_id = row["video_id"]
+        title = row["title"] or video_id
         dest = self.paths.downloads / video_id
         self.db.update_video(video_id, status=DOWNLOADING, local_dir=str(dest))
-        self._event("info", f"Downloading: {row['title'] or video_id}", video_id)
+        self._event("info", f"Downloading: {title}", video_id)
         self._activity(f"Downloading {video_id}")
-        result = self.downloader(
-            video_id,
-            dest,
-            self.settings,
-            on_progress=lambda done, total: self._progress(video_id, done, total),
-            should_abort=self._abort_requested,
-        )
+        speeds: list[float] = []
+
+        def on_progress(done: int, total: int | None, speed: float | None = None, eta: float | None = None) -> None:
+            if speed:
+                speeds.append(speed)
+            self._report("download", video_id, title, done, total, speed, eta)
+
+        try:
+            result = self.downloader(
+                video_id, dest, self.settings, on_progress=on_progress, should_abort=self._abort_requested
+            )
+        finally:
+            self._clear_transfer()
+        if speeds:
+            self._record_speed("download", sum(speeds) / len(speeds))
         info = result.info
+        size = sum(f.stat().st_size for f in result.files)
         self.db.update_video(
             video_id,
             status=DOWNLOADED,
             title=info.get("title") or row["title"],
             upload_date=info.get("upload_date"),
+            size_bytes=size,
         )
-        total = sum(f.stat().st_size for f in result.files)
-        self._event("info", f"Downloaded {len(result.files)} files ({_size(total)}).", video_id)
+        self._event("info", f"Downloaded {len(result.files)} files ({fmt_size(size)}).", video_id)
 
     def _upload(self, row: sqlite3.Row) -> None:
         video_id = row["video_id"]
@@ -191,29 +200,63 @@ class Worker:
         if info_path is None:
             raise RuntimeError(f"No .info.json file in {dest}")
         info = json.loads(info_path.read_text(encoding="utf-8"))
+        title = info.get("title") or video_id
         channel = self.db.channel(row["channel_id"])
         identifier = row["ia_identifier"] or make_identifier(channel["ia_prefix"], video_id)
         files = completed_files(dest)
-        self.db.update_video(video_id, status=UPLOADING, ia_identifier=identifier)
+        size = sum(f.stat().st_size for f in files)
+        self.db.update_video(video_id, status=UPLOADING, ia_identifier=identifier, size_bytes=size)
         self._activity(f"Uploading {video_id} to {identifier}")
         self._event(
             "info",
-            f"Uploading {len(files)} files ({_size(sum(f.stat().st_size for f in files))})"
-            f" to https://archive.org/details/{identifier}",
+            f"Uploading {len(files)} files ({fmt_size(size)}) to https://archive.org/details/{identifier}",
             video_id,
         )
         md5s = {path.name: file_md5(path) for path in files}
-        self.uploader.upload(identifier, files, build_metadata(info, self.settings.get("collection")))
+        meter = Meter(clock=self.clock)
+
+        def on_progress(done: int, total: int) -> None:
+            meter.update(done, total)
+            self._report("upload", video_id, title, done, total, meter.speed, meter.eta)
+
+        started = self.clock()
+        try:
+            sent = self.uploader.upload(
+                identifier,
+                files,
+                build_metadata(info, self.settings.get("collection")),
+                md5s,
+                on_progress=on_progress,
+                should_abort=self._abort_requested,
+            )
+        finally:
+            self._clear_transfer()
+        seconds = self.clock() - started
+        speed = sent / seconds if sent and seconds >= 1 else None
+        if speed:
+            self._record_speed("upload", speed)
+
+        deleted = not self.settings.get_bool("keep_files") and self._delete_local(row)
         self.db.update_video(
             video_id,
             status=UPLOADED,
             file_md5s=json.dumps(md5s),
+            uploaded_at=self.clock(),
+            upload_seconds=seconds,
             next_attempt_at=self.clock() + FIRST_CHECK_DELAY,
+            local_dir=None if deleted else str(dest),
             attempts=0,
             failed_from=None,
             last_error=None,
         )
-        self._event("info", "Uploaded. Waiting for the Internet Archive to confirm.", video_id)
+        rate = f" at {fmt_speed(speed)}" if speed else ""
+        cleanup = " Local files deleted." if deleted else ""
+        self._event(
+            "info",
+            f"Uploaded {fmt_size(size)} in {fmt_duration(seconds)}{rate}.{cleanup}"
+            " Waiting for the Internet Archive to confirm.",
+            video_id,
+        )
 
     def _check_uploads(self) -> None:
         for row in self.db.due_for_check(self.clock()):
@@ -223,23 +266,39 @@ class Worker:
             except Exception as exc:
                 log.warning("Check of %s failed: %s", row["ia_identifier"], exc)
                 confirmed = False
-            if not confirmed:
+            if confirmed:
+                deleted = not self.settings.get_bool("keep_files") and self._delete_local(row)
+                self.db.update_video(
+                    video_id,
+                    status=DONE,
+                    next_attempt_at=None,
+                    **({"local_dir": None} if deleted else {}),
+                )
+                self._event("success", f"Done: https://archive.org/details/{row['ia_identifier']}", video_id)
+            elif row["uploaded_at"] and self.clock() - row["uploaded_at"] > CONFIRM_TIMEOUT:
+                step = UPLOADING if find_info_json(self._local_dir(row)) else DOWNLOADING
+                self._fail(
+                    video_id,
+                    step,
+                    RuntimeError("The Internet Archive did not confirm the upload within 48 hours"),
+                )
+            else:
                 self.db.update_video(video_id, next_attempt_at=self.clock() + CHECK_INTERVAL)
-                continue
-            if not self.settings.get_bool("keep_files"):
-                self._delete_local(row)
-            self.db.update_video(video_id, status=DONE, next_attempt_at=None)
-            self._event("success", f"Done: https://archive.org/details/{row['ia_identifier']}", video_id)
 
-    def _delete_local(self, row: sqlite3.Row) -> None:
+    def _delete_local(self, row: sqlite3.Row) -> bool:
+        if not row["local_dir"] and not (self.paths.downloads / row["video_id"]).exists():
+            return True
         folder = self._local_dir(row).resolve()
+        downloads = self.paths.downloads.resolve()
         # Never delete outside the downloads folder, even if the database holds a strange path.
-        if folder.is_relative_to(self.paths.downloads.resolve()) and folder != self.paths.downloads.resolve():
-            shutil.rmtree(folder, ignore_errors=True)
+        if not folder.is_relative_to(downloads) or folder == downloads:
+            return False
+        shutil.rmtree(folder, ignore_errors=True)
+        return not folder.exists()
 
     def _fail(self, video_id: str, step: str, exc: BaseException) -> None:
         message = _short_error(exc)
-        log.exception("%s failed during %s", video_id, step, exc_info=exc)
+        log.error("%s failed during %s: %s", video_id, step, message, exc_info=exc)
         if step == DOWNLOADING and any(text in message for text in _BLOCKED_ERRORS):
             self.db.update_video(video_id, status=PENDING, last_error=message)
             self.db.set_setting("paused", "1")
@@ -253,14 +312,19 @@ class Worker:
             )
             return
 
-        attempts = self.db.video(video_id)["attempts"] + 1
+        row = self.db.video(video_id)
+        attempts = row["attempts"] + 1
         max_attempts = self.settings.get_int("max_attempts")
         permanent = isinstance(exc, IdentifierTaken) or (
             step == DOWNLOADING and any(text in message for text in _PERMANENT_ERRORS)
         )
         if permanent or attempts >= max_attempts:
+            fields: dict[str, object] = {}
+            # Partial downloads of a skipped video only use disk space. A retry downloads again.
+            if step == DOWNLOADING and not self.settings.get_bool("keep_files") and self._delete_local(row):
+                fields["local_dir"] = None
             self.db.update_video(
-                video_id, status=SKIPPED, failed_from=step, attempts=attempts, last_error=message
+                video_id, status=SKIPPED, failed_from=step, attempts=attempts, last_error=message, **fields
             )
             self._event("error", f"Skipped after {attempts} attempt(s): {message}", video_id)
             return
@@ -292,20 +356,54 @@ class Worker:
         return False
 
     def _abort_requested(self, force: bool = False) -> bool:
-        # The progress hook calls this many times each second, so read the database at most every 2 s.
+        # The progress hooks call this many times each second, so read the database at most every 2 s.
         now = self.clock()
         if force or now - self._abort_checked_at >= PROGRESS_INTERVAL:
             self._abort_cached = self.settings.pause_now
             self._abort_checked_at = now
         return self._abort_cached
 
-    def _progress(self, video_id: str, done: int, total: int | None) -> None:
+    def _report(
+        self,
+        phase: str,
+        video_id: str,
+        title: str,
+        done: int,
+        total: int | None,
+        speed: float | None,
+        eta: float | None,
+    ) -> None:
         now = self.clock()
         if now - self._last_progress < PROGRESS_INTERVAL:
             return
         self._last_progress = now
-        percent = f"{done * 100 // total}% of {_size(total)}" if total else _size(done)
-        self._activity(f"Downloading {video_id}: {percent}")
+        transfer = {
+            "phase": phase,
+            "video_id": video_id,
+            "title": title,
+            "done": done,
+            "total": total,
+            "speed": speed,
+            "eta": eta,
+            "updated_at": now,
+        }
+        self.db.set_setting("transfer", json.dumps(transfer))
+        parts = [f"{done * 100 // total}% of {fmt_size(total)}" if total else fmt_size(done)]
+        if speed:
+            parts.append(fmt_speed(speed))
+        if total:
+            parts.append(fmt_eta(eta))
+        verb = "Downloading" if phase == "download" else "Uploading"
+        self._activity(f"{verb} {video_id}: " + " · ".join(parts))
+
+    def _clear_transfer(self) -> None:
+        self.db.set_setting("transfer", "")
+        self._last_progress = 0.0
+
+    def _record_speed(self, phase: str, bytes_per_second: float) -> None:
+        speeds = json.loads(self.db.get_setting("speeds") or "{}")
+        speeds[phase] = {"bps": bytes_per_second, "at": self.clock()}
+        self.db.set_setting("speeds", json.dumps(speeds))
 
     def _activity(self, text: str) -> None:
         if text != self._activity_text:

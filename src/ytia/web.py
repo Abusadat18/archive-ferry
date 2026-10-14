@@ -28,6 +28,7 @@ from .db import FAILED, SKIPPED, STATUSES, Database
 from .doctor import run_checks
 from .lock import WorkerLock
 from .power import KeepAwake
+from .progress import current_transfer
 from .sync import Lister, fetch_listing, normalize_channel_url, sync_channel
 
 log = logging.getLogger("ytia.web")
@@ -144,6 +145,8 @@ class App:
             "paused": settings.paused,
             "pause_now": settings.pause_now,
             "activity": db.get_setting("activity", "Idle") if running else "Idle",
+            "transfer": current_transfer(db) if running else None,
+            "speeds": json.loads(db.get_setting("speeds") or "{}"),
             "counts": counts,
             "total": sum(counts.values()),
             "channels": channels,

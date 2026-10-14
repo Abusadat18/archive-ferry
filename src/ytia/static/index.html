@@ -61,6 +61,13 @@
   .bar > div { height: 100%; width: 0; background: var(--accent); border-radius: 99px; transition: width .6s ease; }
   .chips { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--muted); }
   .chips span b { color: var(--text); }
+  .transfer { margin-top: 12px; padding: 12px 14px; border-radius: 10px; background: var(--accent-soft); }
+  .transfer-head { display: flex; gap: 8px; flex-wrap: wrap; font-size: 14px; }
+  .transfer-head span { overflow-wrap: anywhere; }
+  .bar.thin { height: 6px; margin: 10px 0 8px; background: color-mix(in srgb, var(--accent) 18%, transparent); }
+  .transfer-meta { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 13px; font-variant-numeric: tabular-nums; }
+  .speeds[hidden], .activity[hidden] { display: none; }
+  .speeds { display: flex; flex-wrap: wrap; gap: 4px 18px; margin-top: 10px; font-size: 13px; font-variant-numeric: tabular-nums; }
   .activity { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 14px; display: flex; gap: 8px; align-items: center; min-height: 22px; }
 
   .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: var(--idle); flex: none; }
@@ -159,6 +166,12 @@
     <div class="bar" role="progressbar" aria-label="Archive progress" id="bar"><div id="bar-fill"></div></div>
     <div class="chips" id="chips"></div>
     <div class="activity"><span class="muted">Now:</span> <span id="activity">Idle</span></div>
+    <div class="transfer" id="transfer" hidden>
+      <div class="transfer-head"><b id="tr-phase"></b><span class="muted" id="tr-title"></span></div>
+      <div class="bar thin"><div id="tr-fill"></div></div>
+      <div class="transfer-meta"><span id="tr-amount"></span><span id="tr-speed"></span><b id="tr-eta"></b></div>
+    </div>
+    <div class="speeds" id="speeds" hidden></div>
   </section>
 
   <section class="card">
@@ -305,6 +318,42 @@ async function act(button, fn, busyText) {
 const fmtTime = (ts) => ts ? new Date(ts * 1000).toLocaleString([], { dateStyle: "short", timeStyle: "short" }) : "never";
 const nf = new Intl.NumberFormat();
 
+function fmtSize(bytes) {
+  if (!bytes) return "?";
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  let i = 0;
+  while (bytes >= 1024 && i < units.length - 1) { bytes /= 1024; i++; }
+  return `${bytes.toFixed(i < 2 ? 0 : 1)} ${units[i]}`;
+}
+// Internet plans are sold in Mbit/s, so show that next to the file speed.
+const fmtSpeed = (bps) => bps ? `${fmtSize(bps)}/s (${(bps * 8 / 1e6).toFixed(1)} Mbit/s)` : "measuring…";
+function fmtEta(seconds) {
+  if (seconds == null) return "time left unknown";
+  if (seconds < 60) return "less than 1 min left";
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `about ${minutes} min left`;
+  return `about ${Math.floor(minutes / 60)} h ${minutes % 60} min left`;
+}
+
+function renderTransfer(t, speeds) {
+  const box = $("#transfer");
+  box.hidden = !t;
+  if (t) {
+    $("#tr-phase").textContent = t.phase === "download" ? "Downloading from YouTube" : "Uploading to the Internet Archive";
+    $("#tr-title").textContent = t.title;
+    $("#tr-fill").style.width = t.total ? `${Math.min(100, t.done * 100 / t.total)}%` : "0";
+    $("#tr-amount").textContent = t.total ? `${fmtSize(t.done)} of ${fmtSize(t.total)} (${Math.floor(t.done * 100 / t.total)}%)` : fmtSize(t.done);
+    $("#tr-speed").textContent = fmtSpeed(t.speed);
+    $("#tr-eta").textContent = t.total ? fmtEta(t.eta) : "";
+  }
+  const parts = [];
+  for (const [key, label] of [["download", "Download"], ["upload", "Upload"]]) {
+    if (speeds[key]) parts.push(el("span", { title: `Measured ${fmtTime(speeds[key].at)}` }, `${label} speed `, el("b", {}, fmtSpeed(speeds[key].bps))));
+  }
+  $("#speeds").hidden = parts.length === 0;
+  $("#speeds").replaceChildren(el("span", { class: "muted" }, "Last measured:"), ...parts);
+}
+
 // State
 
 let state = null;
@@ -328,9 +377,13 @@ function renderState(s) {
   $("#pill-text").textContent = !s.worker.running ? (paused ? "Stopped · paused" : "Stopped")
     : paused ? "Paused" : s.worker.in_ui ? "Working" : "Working (in a terminal)";
   $("#activity").textContent = s.worker.running ? s.activity : (paused ? "The queue is paused." : "The worker is not running.");
+  // The transfer panel shows the same data in more detail.
+  $(".activity").hidden = !!s.transfer;
   $("#footer-info").textContent = `ytia ${s.version} · data folder: ${s.home}`;
 
-  const sig = JSON.stringify([s.worker, paused, s.pause_now, s.total > 0, s.activity.startsWith("Downloading")]);
+  renderTransfer(s.transfer, s.speeds);
+
+  const sig = JSON.stringify([s.worker, paused, s.pause_now, s.total > 0, !!s.transfer]);
   if (sig !== lastControls) { lastControls = sig; renderControls(s); }
   const chSig = JSON.stringify(s.channels);
   if (chSig !== lastChannels) { lastChannels = chSig; renderChannels(s.channels); }
@@ -355,7 +408,7 @@ function renderControls(s) {
   } else if (s.worker.running) {
     buttons.push(el("button", { class: "btn", title: "Complete the current step, then wait.",
       onclick: (e) => act(e.target, () => api("/api/pause", {}).then(() => toast("Pausing after the current step."))) }, "Pause"));
-    if (s.activity.startsWith("Downloading")) buttons.push(el("button", { class: "btn", title: "Stop the download now. It continues from the same point later.",
+    if (s.transfer) buttons.push(el("button", { class: "btn", title: "Stop the download or upload now. It continues later.",
       onclick: (e) => act(e.target, () => api("/api/pause", { now: true })) }, "Pause now"));
   }
   $("#controls").replaceChildren(...buttons);

@@ -6,7 +6,9 @@ It works on one video at a time: download, upload, verify, delete the local copy
 - **Pause and resume.** Stop at any time and continue later from the same point. You can let it run overnight.
 - **Resync.** Run `ytia sync` after new uploads. The tool adds only the new videos to the queue.
 - **Crash-safe.** A SQLite database records each step. After a crash or a power cut, the next `ytia run` continues the interrupted step.
-- **Verified.** The tool deletes a local file only after the Internet Archive shows the same MD5 checksum.
+- **Small disk use.** The tool deletes the video files from your computer right after each upload. The database keeps only the metadata, so a resync never uploads a video again.
+- **Verified.** The Internet Archive checks the MD5 checksum of each file when it arrives. Later, the tool checks that the item shows the same checksums.
+- **Speed and time left.** The tool shows the download speed, the upload speed and the time left for the current video.
 
 > **Use this tool only for content that you own or have the rights to share.**
 > Obey the YouTube Terms of Service and the Internet Archive [Terms of Use](https://archive.org/about/terms.php).
@@ -95,7 +97,7 @@ Choose the prefix carefully. The identifier of an item cannot change after the u
 |---|---|
 | Start or continue the work | `ytia run` |
 | Pause after the current step | `ytia pause` (or press Ctrl+C one time in the worker window) |
-| Pause the current download at once | `ytia pause --now` |
+| Pause the current download or upload at once | `ytia pause --now` |
 | Continue after a pause | `ytia resume` |
 | Add new uploads to the queue | `ytia sync` |
 | See the progress | `ytia status` |
@@ -105,7 +107,7 @@ Choose the prefix carefully. The identifier of an item cannot change after the u
 | Open the web page | `ytia ui` |
 
 Press Ctrl+C two times to stop the worker at once. The next `ytia run` continues the interrupted step.
-yt-dlp continues a partial download. An interrupted upload starts again for the file that was not complete.
+yt-dlp continues a partial download. An interrupted upload starts again for the file that was not complete. Files that are already on the Internet Archive do not upload again.
 
 ## Settings
 
@@ -122,19 +124,39 @@ Run `ytia config show` to see all settings. Run `ytia config set <key> <value>` 
 | `rate_limit` | | Maximum download speed, for example `5M` |
 | `pause_between` | `10` | Seconds between two videos |
 | `max_attempts` | `3` | Attempts for each video before the worker skips it |
-| `max_unverified` | `3` | Uploads that can wait for confirmation before the next download starts |
+| `max_unverified` | `10` | Uploads that can wait for confirmation before the next download starts |
 | `min_free_gb` | `5` | The worker pauses when the free disk space is less than this |
-| `keep_files` | `false` | Keep local files after a confirmed upload |
+| `keep_files` | `false` | Keep the video files on your computer after the upload |
 | `collection` | `opensource_movies` | Internet Archive collection |
 
 ## How it works
 
 ```
 pending → downloading → downloaded → uploading → uploaded → done
-              │                          │           (MD5 confirmed, local files deleted)
+              │                          │     (local files    (the item shows
+              │                          │      deleted)        the same MD5s)
               └────────► failed ◄────────┘
                 (retry with backoff, then skipped)
 ```
+
+### What stays on your computer
+
+After an upload, the tool deletes the folder of that video. The database keeps one row for each video:
+
+- the YouTube ID, the title, the upload date and the duration
+- the Internet Archive identifier
+- the size, the MD5 checksum of each file, the upload time and how long the upload took
+
+Resync uses the YouTube ID. A video that is in the database never goes back in the queue.
+If the Internet Archive does not show the item within 48 hours, the tool downloads the video again and uploads it again.
+To keep the files on your computer, run `ytia config set keep_files true`.
+
+### Speed and time left
+
+- The **Now** panel on the web page shows the current download or upload: the progress, the speed and the time left.
+- `ytia status` shows the same data in the terminal.
+- The tool also shows the last measured download speed and upload speed. Both are in MB/s and in Mbit/s, the unit of internet plans.
+- The speed is the average of the last 10 seconds, so the estimate does not jump.
 
 - The worker takes interrupted work first. Then it takes new videos, oldest first.
 - A failed video waits 5 minutes, then 10 minutes, then 20 minutes, and so on.

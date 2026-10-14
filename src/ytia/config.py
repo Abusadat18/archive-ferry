@@ -17,7 +17,7 @@ DEFAULTS: dict[str, str] = {
     "rate_limit": "",
     "pause_between": "10",
     "max_attempts": "3",
-    "max_unverified": "3",
+    "max_unverified": "10",
     "min_free_gb": "5",
     "keep_files": "false",
     "collection": "opensource_movies",
@@ -35,7 +35,7 @@ HELP: dict[str, str] = {
     "max_attempts": "Attempts for each video before the worker skips it.",
     "max_unverified": "Uploads that can wait for Internet Archive confirmation before the next download starts.",
     "min_free_gb": "The worker pauses when the free disk space is less than this.",
-    "keep_files": "Keep local files after the Internet Archive confirms the upload (true/false).",
+    "keep_files": "Keep the video files on this computer after the upload (true/false). Default: delete them at once.",
     "collection": "Internet Archive collection for new items.",
 }
 

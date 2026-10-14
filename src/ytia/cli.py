@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import signal
 from datetime import datetime
@@ -19,6 +20,7 @@ from .config import DEFAULTS, HELP, Paths, Settings
 from .db import DONE, FAILED, SKIPPED, STATUSES, Database
 from .lock import WorkerLock
 from .power import KeepAwake
+from .progress import current_transfer, fmt_eta, fmt_size, fmt_speed
 from .sync import normalize_channel_url, sync_channel
 
 app = typer.Typer(
@@ -194,7 +196,7 @@ def run() -> None:
 @app.command()
 def pause(
     now: bool = typer.Option(
-        False, "--now", help="Stop the current download at once. Without this option, the current step completes first."
+        False, "--now", help="Stop the current download or upload at once. Without this option, the current step completes first."
     ),
 ) -> None:
     """Pause the worker. Use `ytia resume` to continue."""
@@ -203,7 +205,7 @@ def pause(
     if not WorkerLock.is_held(state.paths.lock):
         console.print("Paused. No worker is running now.")
     elif now:
-        console.print("Paused. The worker stops the current download now. An upload that runs completes first.")
+        console.print("Paused. The worker stops the current download or upload now.")
     else:
         console.print("Paused. The worker completes the current step, then waits.")
 
@@ -239,6 +241,18 @@ def status() -> None:
     console.print(f"Queue: {'[yellow]paused[/]' if settings.paused else 'active'}")
     if running:
         console.print(f"Now: {escape(db.get_setting('activity', 'Idle'))}")
+        transfer = current_transfer(db)
+        if transfer:
+            verb = "Downloading" if transfer["phase"] == "download" else "Uploading"
+            done, total = transfer["done"], transfer["total"]
+            amount = f"{fmt_size(done)} of {fmt_size(total)}" if total else fmt_size(done)
+            console.print(f"{verb}: {escape(transfer['title'])}")
+            console.print(f"  {amount} · {fmt_speed(transfer['speed'])} · {fmt_eta(transfer['eta'])}")
+    speeds = json.loads(db.get_setting("speeds") or "{}")
+    for phase, label in (("download", "Download"), ("upload", "Upload")):
+        if phase in speeds:
+            measured = speeds[phase]
+            console.print(f"Last {label.lower()} speed: {fmt_speed(measured['bps'])} ({_time(measured['at'])})")
     if counts[FAILED] or counts[SKIPPED]:
         console.print("See the problems with: ytia list --status failed --status skipped")
 
