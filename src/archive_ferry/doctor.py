@@ -9,6 +9,7 @@ from dataclasses import asdict, dataclass
 from . import __version__
 from .archive import Uploader
 from .config import Paths, Settings
+from .tools import find_ffmpeg, find_js_runtime
 
 
 @dataclass
@@ -30,18 +31,17 @@ def run_checks(paths: Paths, settings: Settings) -> list[Check]:
         Check("Python", True, platform.python_version()),
         Check("yt-dlp", True, yt_dlp.version.__version__),
     ]
-    ffmpeg = shutil.which("ffmpeg")
-    checks.append(
-        Check("ffmpeg", bool(ffmpeg), ffmpeg or "not found", "Install ffmpeg (Windows: winget install Gyan.FFmpeg)")
-    )
+    reinstall = "Install archive-ferry again; it brings ffmpeg and Deno with it."
+    ffmpeg = find_ffmpeg()
+    checks.append(Check("ffmpeg", ffmpeg.path is not None, ffmpeg.describe(), reinstall))
     runtime = settings.get("js_runtime") or "deno"
-    binary = shutil.which({"quickjs": "qjs"}.get(runtime, runtime))
+    js = find_js_runtime(runtime)
     checks.append(
         Check(
             f"JS runtime ({runtime})",
-            bool(binary),
-            binary or "not found",
-            "Install Deno (Windows: winget install DenoLand.Deno). yt-dlp needs it for YouTube.",
+            js.path is not None,
+            js.describe(),
+            reinstall if runtime == "deno" else f"Install {runtime}, or set js_runtime back to deno.",
         )
     )
     keys = Uploader().has_credentials()

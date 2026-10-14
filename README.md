@@ -28,16 +28,9 @@ This section is not legal advice. If you are not sure that you have the rights t
 ## Requirements
 
 - Python 3.10 or later
-- [ffmpeg](https://ffmpeg.org) on your `PATH`
-- [Deno](https://deno.com) on your `PATH`. yt-dlp needs a JavaScript runtime for YouTube.
 - An [Internet Archive account](https://archive.org/account/signup)
 
-On Windows, install the tools with winget:
-
-```powershell
-winget install Gyan.FFmpeg
-winget install DenoLand.Deno
-```
+You do not need to install ffmpeg or Deno. archive-ferry brings both with it (about 70 MB). If ffmpeg or Deno is already on your `PATH`, archive-ferry uses your copy. Run `archive-ferry doctor` to see which copy it uses.
 
 ## Install
 
@@ -147,7 +140,7 @@ Change the settings on the web page (**Settings**), or with `archive-ferry confi
 | `rate_limit` | | Maximum download speed, for example `5M` |
 | `collection` | `opensource_movies` | Internet Archive collection. New accounts can upload only to `opensource_movies`. |
 | `format` | `bv*+ba/b` | yt-dlp format selector |
-| `merge_format` | `mp4` | Container for merged video and audio |
+| `merge_format` | `mkv` | Container for merged video and audio. MKV keeps the best quality (AV1 or VP9), and archive.org makes a playable MP4 copy. |
 | `subtitles` | `true` | Download and upload subtitles |
 | `cookies_file` | | Path to a `cookies.txt` file |
 | `js_runtime` | | `deno` (default), `node`, `bun` or `quickjs` |

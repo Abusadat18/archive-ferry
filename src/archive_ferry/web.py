@@ -33,6 +33,7 @@ from .sync import Lister, fetch_listing, normalize_channel_url, sync_channel
 log = logging.getLogger("archive_ferry.web")
 
 DEFAULT_PORT = 8765
+MAX_BODY_BYTES = 64 * 1024
 _ASSET_TYPES = {".woff2": "font/woff2", ".txt": "text/plain; charset=utf-8"}
 
 
@@ -292,6 +293,16 @@ def _make_handler(app: App, allowed_hosts: set[str]) -> type[BaseHTTPRequestHand
             self._dispatch("GET", {})
 
         def do_POST(self) -> None:
+            try:
+                length = int(self.headers.get("Content-Length") or 0)
+            except ValueError:
+                length = -1
+            if not 0 <= length <= MAX_BODY_BYTES:
+                self.close_connection = True
+                return self._json(HTTPStatus.REQUEST_ENTITY_TOO_LARGE, {"error": "Request body is too large"})
+            # Read the body before any answer. On Windows, a socket closed with unread
+            # data resets the connection, and the client never sees the error response.
+            raw = self.rfile.read(length)
             host = self.headers.get("Host")
             origin = self.headers.get("Origin")
             if host not in allowed_hosts or (origin and origin != f"http://{host}"):
@@ -299,7 +310,6 @@ def _make_handler(app: App, allowed_hosts: set[str]) -> type[BaseHTTPRequestHand
             if not (self.headers.get("Content-Type") or "").startswith("application/json"):
                 return self._json(HTTPStatus.UNSUPPORTED_MEDIA_TYPE, {"error": "Use application/json"})
             try:
-                raw = self.rfile.read(int(self.headers.get("Content-Length") or 0))
                 body = json.loads(raw or b"{}")
             except ValueError:
                 return self._json(HTTPStatus.BAD_REQUEST, {"error": "Invalid JSON"})

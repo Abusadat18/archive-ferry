@@ -10,7 +10,7 @@ from .db import Database
 
 DEFAULTS: dict[str, str] = {
     "format": "bv*+ba/b",
-    "merge_format": "mp4",
+    "merge_format": "mkv",
     "subtitles": "true",
     "cookies_file": "",
     "cookies_from_browser": "",
@@ -26,7 +26,7 @@ DEFAULTS: dict[str, str] = {
 
 HELP: dict[str, str] = {
     "format": "yt-dlp format selector.",
-    "merge_format": "Container for merged video and audio: mp4, mkv or webm.",
+    "merge_format": "Container for merged video and audio: mkv (keeps any codec), mp4 or webm.",
     "subtitles": "Download and upload subtitles.",
     "cookies_file": "Path to a cookies.txt file for YouTube.",
     "cookies_from_browser": "Use this browser's YouTube login when YouTube blocks downloads. Firefox works best.",

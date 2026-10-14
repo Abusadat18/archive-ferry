@@ -31,7 +31,10 @@ classifiers = [
     "Topic :: System :: Archiving :: Backup",
 ]
 dependencies = [
-    "yt-dlp[default]>=2025.11.12",
+    # The deno extra and imageio-ffmpeg bring the JavaScript runtime and ffmpeg,
+    # so users do not install them or change PATH.
+    "yt-dlp[default,deno]>=2025.11.12",
+    "imageio-ffmpeg>=0.6",
     "internetarchive>=5.0",
     "typer>=0.12",
     "rich>=13",

@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 
 from .config import Settings
+from .tools import find_ffmpeg
 
 log = logging.getLogger("archive_ferry.yt-dlp")
 
@@ -33,4 +34,8 @@ def base_options(settings: Settings) -> dict:
         opts["cookiesfrombrowser"] = (browser, None, None, None)
     if runtime := settings.get("js_runtime"):
         opts["js_runtimes"] = {runtime: {}}
+    # yt-dlp finds a system ffmpeg on its own, but not the bundled one.
+    ffmpeg = find_ffmpeg()
+    if ffmpeg.bundled:
+        opts["ffmpeg_location"] = ffmpeg.path
     return opts
