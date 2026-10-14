@@ -34,25 +34,28 @@ You do not need to install ffmpeg or Deno. archive-ferry brings both with it (ab
 
 ## Install
 
-archive-ferry is not on PyPI yet. Install it from the source code with [uv](https://docs.astral.sh/uv/) or [pipx](https://pipx.pypa.io):
+Install archive-ferry from [PyPI](https://pypi.org/project/archive-ferry/) with [uv](https://docs.astral.sh/uv/) or [pipx](https://pipx.pypa.io):
 
 ```bash
-git clone https://github.com/Abusadat18/archive-ferry.git
-cd archive-ferry
-uv tool install .
-# or: pipx install .
+uv tool install archive-ferry
+# or: pipx install archive-ferry
 ```
 
 This adds two commands: `archive-ferry` (terminal) and `archive-ferry-ui` (web page).
+
+To install the newest code from GitHub instead:
+
+```bash
+uv tool install git+https://github.com/Abusadat18/archive-ferry
+```
 
 ### Update
 
 YouTube changes often, and old versions of yt-dlp stop working. Update archive-ferry and its tools often:
 
 ```bash
-git pull
-uv tool install --reinstall .
-# or: pipx install --force .
+uv tool upgrade archive-ferry
+# or: pipx upgrade archive-ferry
 ```
 
 ## Use the web page
@@ -217,6 +220,20 @@ uv run archive-ferry --help
 ```
 
 Bug reports and pull requests are welcome. Please run the tests before you send a pull request.
+GitHub Actions runs the tests on Windows, macOS and Linux for each push and pull request.
+
+### Release a new version
+
+1. Change `version` in `pyproject.toml`, and add the changes to `CHANGELOG.md`.
+2. Commit and push the change to `main`.
+3. Tag the commit and push the tag:
+
+   ```bash
+   git tag v0.2.0
+   git push origin v0.2.0
+   ```
+
+The release workflow checks that the tag matches the version, runs the tests, builds the package and publishes it to PyPI. It uses PyPI Trusted Publishing, so no token is stored.
 
 ## License
 
