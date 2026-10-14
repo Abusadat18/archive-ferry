@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ytia</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f6e66'/%3E%3Cpath d='M11 9l10 7-10 7z' fill='white'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #f5f4f0; --card: #ffffff; --text: #1d1c1a; --muted: #6c6962; --line: #e5e2da;
+    --accent: #0f6e66; --accent-ink: #ffffff; --accent-soft: #e2f0ee;
+    --ok: #2f8a4c; --warn: #b26b00; --bad: #c2410c; --busy: #2563eb; --idle: #8a877f;
+    --shadow: 0 1px 2px rgba(0,0,0,.04), 0 2px 8px rgba(0,0,0,.04);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141513; --card: #1d1e1c; --text: #ecebe6; --muted: #9d9a91; --line: #2f302c;
+      --accent: #43b8aa; --accent-ink: #0a1513; --accent-soft: #1b3330;
+      --ok: #5cc27c; --warn: #e3a33b; --bad: #f07a4a; --busy: #6c9cff; --idle: #77746c;
+      --shadow: none;
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  a { color: var(--accent); }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 24px 16px 48px; }
+  .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 13px; }
+  .muted { color: var(--muted); }
+
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand svg { width: 40px; height: 40px; flex: none; }
+  .brand h1 { font-size: 20px; margin: 0; letter-spacing: -.01em; }
+  .brand p { margin: 0; font-size: 13px; color: var(--muted); }
+  .controls { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .btn { font: inherit; font-weight: 600; font-size: 14px; border-radius: 9px; padding: 8px 16px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--card); color: var(--text); }
+  .btn:hover:not(:disabled) { border-color: var(--muted); }
+  .btn:disabled { opacity: .55; cursor: default; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .btn.primary:hover:not(:disabled) { filter: brightness(1.08); }
+  .btn.small { padding: 4px 10px; font-size: 13px; }
+  .btn.danger { color: var(--bad); }
+
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; margin-bottom: 16px; box-shadow: var(--shadow); }
+  .card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+  h2 { font-size: 16px; margin: 0; }
+
+  .banner { border: 1px solid var(--warn); background: color-mix(in srgb, var(--warn) 10%, var(--card));
+    border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; }
+  .banner b { color: var(--warn); }
+  .banner button { margin-left: 8px; }
+
+  .hero-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+  .big { font-size: 30px; font-weight: 700; letter-spacing: -.02em; line-height: 1.1; }
+  .bar { height: 10px; border-radius: 99px; background: var(--line); overflow: hidden; margin: 16px 0 12px; }
+  .bar > div { height: 100%; width: 0; background: var(--accent); border-radius: 99px; transition: width .6s ease; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--muted); }
+  .chips span b { color: var(--text); }
+  .activity { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 14px; display: flex; gap: 8px; align-items: center; min-height: 22px; }
+
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: var(--idle); flex: none; }
+  .pill { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; padding: 4px 12px; border-radius: 99px; border: 1px solid var(--line); }
+  .pill.working .dot { background: var(--ok); animation: pulse 1.4s ease-in-out infinite; }
+  .pill.paused .dot { background: var(--warn); }
+  @keyframes pulse { 50% { opacity: .35; } }
+  @media (prefers-reduced-motion: reduce) { .pill.working .dot { animation: none; } .bar > div { transition: none; } }
+
+  .s-pending { --c: var(--idle); } .s-downloading, .s-uploading { --c: var(--busy); }
+  .s-downloaded, .s-uploaded { --c: var(--accent); } .s-done { --c: var(--ok); }
+  .s-failed { --c: var(--warn); } .s-skipped { --c: var(--bad); }
+  .chips .dot, .badge .dot { background: var(--c); }
+  .badge { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; white-space: nowrap; }
+
+  .channels { list-style: none; padding: 0; margin: 0 0 16px; }
+  .channels li { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  .channels li:first-child { border-top: 1px solid var(--line); }
+  .channels .name { font-weight: 600; flex: 1 1 200px; min-width: 0; overflow-wrap: anywhere; }
+  .channels .meta { font-size: 13px; color: var(--muted); }
+  .empty { color: var(--muted); padding: 8px 0 16px; }
+
+  form.row { display: flex; gap: 8px; flex-wrap: wrap; }
+  input, select { font: inherit; font-size: 14px; padding: 8px 10px; border-radius: 9px; border: 1px solid var(--line);
+    background: var(--bg); color: var(--text); min-width: 0; }
+  input:focus, select:focus, .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  #add-url { flex: 3 1 260px; } #add-prefix { flex: 1 1 140px; }
+  .hint { font-size: 13px; color: var(--muted); margin: 8px 0 0; }
+
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin: -4px 0 16px; overflow-x: auto; }
+  .tabs button { font: inherit; font-size: 14px; font-weight: 600; background: none; border: 0; color: var(--muted);
+    padding: 8px 12px; border-bottom: 2px solid transparent; cursor: pointer; white-space: nowrap; }
+  .tabs button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); }
+  [data-panel][hidden] { display: none; }
+
+  .toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); font-weight: 600; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+  td { padding: 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  td.title { min-width: 220px; overflow-wrap: anywhere; }
+  td.detail { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; max-width: 340px; }
+  td.detail.err { color: var(--bad); }
+
+  .events { list-style: none; margin: 0; padding: 0; max-height: 460px; overflow-y: auto; font-size: 14px; }
+  .events li { display: grid; grid-template-columns: 130px 1fr; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+  .events time { color: var(--muted); font-size: 13px; }
+  .events .msg { white-space: pre-wrap; overflow-wrap: anywhere; }
+  .events .warning .msg { color: var(--warn); } .events .error .msg { color: var(--bad); } .events .success .msg { color: var(--ok); }
+  @media (max-width: 560px) { .events li { grid-template-columns: 1fr; gap: 0; } }
+
+  .settings { display: grid; gap: 14px; }
+  .setting { display: grid; grid-template-columns: 1fr 260px; gap: 4px 16px; align-items: center; }
+  .setting label { font-weight: 600; font-size: 14px; }
+  .setting p { margin: 0; font-size: 13px; color: var(--muted); grid-column: 1; }
+  .setting .input { grid-column: 2; grid-row: 1 / span 2; }
+  .setting .input > * { width: 100%; }
+  @media (max-width: 640px) { .setting { grid-template-columns: 1fr; } .setting .input { grid-column: 1; grid-row: auto; } }
+
+  .checks { list-style: none; padding: 0; margin: 0 0 20px; }
+  .checks li { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .checks .mark { font-weight: 700; width: 18px; flex: none; }
+  .checks .ok .mark { color: var(--ok); } .checks .bad .mark { color: var(--bad); }
+  .checks .fix { font-size: 13px; color: var(--muted); }
+  .login { border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  .login h3 { margin: 0 0 4px; font-size: 15px; }
+  .login form { margin-top: 12px; }
+  .login input { flex: 1 1 200px; }
+
+  footer { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 13px; color: var(--muted); padding-top: 8px; }
+
+  #toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); max-width: min(560px, calc(100vw - 32px));
+    background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: 14px; opacity: 0;
+    pointer-events: none; transition: opacity .2s; white-space: pre-wrap; z-index: 10; }
+  #toast.show { opacity: 1; } #toast.error { background: var(--bad); color: #fff; }
+  .closed { text-align: center; padding: 80px 16px; }
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="10" fill="var(--accent)"/><path d="M14 11l13 9-13 9z" fill="var(--accent-ink)"/></svg>
+      <div><h1>ytia</h1><p>YouTube channel → Internet Archive</p></div>
+    </div>
+    <div class="controls" id="controls"></div>
+  </header>
+
+  <div class="banner" id="banner" hidden></div>
+
+  <section class="card">
+    <div class="hero-top">
+      <div><div class="big" id="done-text">–</div><div class="muted" id="done-sub">videos archived</div></div>
+      <span class="pill" id="pill"><span class="dot"></span><span id="pill-text">Stopped</span></span>
+    </div>
+    <div class="bar" role="progressbar" aria-label="Archive progress" id="bar"><div id="bar-fill"></div></div>
+    <div class="chips" id="chips"></div>
+    <div class="activity"><span class="muted">Now:</span> <span id="activity">Idle</span></div>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Channels</h2>
+      <button class="btn small" id="sync-all" hidden>Check all channels</button>
+    </div>
+    <ul class="channels" id="channels"></ul>
+    <form class="row" id="add-form">
+      <input id="add-url" placeholder="https://www.youtube.com/@yourchannel" aria-label="Channel URL" required>
+      <input id="add-prefix" placeholder="Item prefix (optional)" aria-label="Item prefix">
+      <button class="btn primary" id="add-btn">Add channel</button>
+    </form>
+    <p class="hint">Each video becomes archive.org/details/<b>prefix</b>-videoID. Choose the prefix carefully: you cannot change it after the first upload.</p>
+  </section>
+
+  <section class="card">
+    <nav class="tabs" role="tablist">
+      <button role="tab" data-tab="queue" aria-selected="true">Videos</button>
+      <button role="tab" data-tab="activity" aria-selected="false">Activity</button>
+      <button role="tab" data-tab="settings" aria-selected="false">Settings</button>
+      <button role="tab" data-tab="setup" aria-selected="false">Setup</button>
+    </nav>
+
+    <div data-panel="queue">
+      <div class="toolbar">
+        <select id="filter" aria-label="Filter by status">
+          <option value="">All videos</option>
+          <option value="pending">Waiting</option>
+          <option value="downloading">Downloading</option>
+          <option value="downloaded">Downloaded</option>
+          <option value="uploading">Uploading</option>
+          <option value="uploaded">Confirming</option>
+          <option value="done">Archived</option>
+          <option value="failed">Will retry</option>
+          <option value="skipped">Skipped</option>
+        </select>
+        <button class="btn small" id="retry-failed">Retry failed now</button>
+        <button class="btn small" id="retry-skipped">Retry skipped</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Video</th><th>Status</th><th>Tries</th><th>Archive item / problem</th></tr></thead>
+          <tbody id="videos"></tbody>
+        </table>
+      </div>
+      <p class="empty" id="videos-empty" hidden>No videos here.</p>
+    </div>
+
+    <div data-panel="activity" hidden>
+      <ol class="events" id="events"></ol>
+      <p class="empty" id="events-empty">Nothing happened yet.</p>
+    </div>
+
+    <div data-panel="settings" hidden>
+      <div class="settings" id="settings"></div>
+    </div>
+
+    <div data-panel="setup" hidden>
+      <ul class="checks" id="checks"></ul>
+      <div class="login">
+        <h3>Internet Archive account</h3>
+        <p class="muted" style="margin:0;font-size:13px">Your password goes only to archive.org. ytia stores the upload keys that archive.org returns, not the password.</p>
+        <form class="row" id="login-form">
+          <input id="login-email" type="email" placeholder="E-mail" autocomplete="username" required>
+          <input id="login-password" type="password" placeholder="Password" autocomplete="current-password" required>
+          <button class="btn primary">Log in</button>
+        </form>
+      </div>
+      <p class="hint">If YouTube asks you to "confirm you're not a bot", go to Settings and choose your browser in <b>YouTube cookies from browser</b>. Log in to YouTube in that browser first.</p>
+    </div>
+  </section>
+
+  <footer>
+    <span id="footer-info"></span>
+    <button class="btn small danger" id="quit">Close ytia</button>
+  </footer>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+"use strict";
+const $ = (s) => document.querySelector(s);
+const STATUS = {
+  pending: "Waiting", downloading: "Downloading", downloaded: "Downloaded", uploading: "Uploading",
+  uploaded: "Confirming", done: "Archived", failed: "Will retry", skipped: "Skipped",
+};
+const SETTING_LABELS = {
+  format: "Video format (yt-dlp)", merge_format: "Video container", subtitles: "Subtitles",
+  cookies_file: "YouTube cookies file", cookies_from_browser: "YouTube cookies from browser",
+  js_runtime: "JavaScript runtime", rate_limit: "Download speed limit", pause_between: "Pause between videos (seconds)",
+  max_attempts: "Attempts per video", max_unverified: "Uploads waiting for confirmation",
+  min_free_gb: "Minimum free disk space (GB)", keep_files: "Keep local files", collection: "Internet Archive collection",
+};
+const SETTING_CHOICES = {
+  merge_format: ["mp4", "mkv", "webm"],
+  subtitles: ["true", "false"], keep_files: ["false", "true"],
+  cookies_from_browser: ["", "firefox", "chrome", "edge", "brave", "opera", "vivaldi", "chromium", "safari"],
+  js_runtime: ["", "deno", "node", "bun", "quickjs"],
+};
+
+function el(tag, props = {}, ...kids) {
+  const node = document.createElement(tag);
+  for (const [key, value] of Object.entries(props)) {
+    if (value == null || value === false) continue;
+    if (key === "class") node.className = value;
+    else if (key === "text") node.textContent = value;
+    else if (key.startsWith("on")) node.addEventListener(key.slice(2), value);
+    else node.setAttribute(key, value === true ? "" : value);
+  }
+  for (const kid of kids.flat()) {
+    if (kid == null || kid === false) continue;
+    node.append(kid instanceof Node ? kid : document.createTextNode(String(kid)));
+  }
+  return node;
+}
+
+async function api(path, body) {
+  const opts = body === undefined ? {} :
+    { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) };
+  const response = await fetch(path, opts);
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || response.statusText);
+  return data;
+}
+
+let toastTimer;
+function toast(message, isError = false) {
+  const t = $("#toast");
+  t.textContent = message;
+  t.className = "show" + (isError ? " error" : "");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => (t.className = ""), isError ? 6000 : 3000);
+}
+
+async function act(button, fn, busyText) {
+  const label = button.textContent;
+  button.disabled = true;
+  if (busyText) button.textContent = busyText;
+  try { await fn(); } catch (e) { toast(e.message, true); }
+  finally { button.disabled = false; button.textContent = label; refresh(); }
+}
+
+const fmtTime = (ts) => ts ? new Date(ts * 1000).toLocaleString([], { dateStyle: "short", timeStyle: "short" }) : "never";
+const nf = new Intl.NumberFormat();
+
+// State
+
+let state = null;
+let lastControls = "";
+let lastChannels = "";
+
+function renderState(s) {
+  state = s;
+  const done = s.counts.done, total = s.total;
+  $("#done-text").textContent = total ? `${nf.format(done)} of ${nf.format(total)}` : "No videos yet";
+  $("#done-sub").textContent = total ? `videos archived (${Math.floor(done * 100 / total)}%)` : "Add a channel to start";
+  $("#bar-fill").style.width = total ? `${done * 100 / total}%` : "0";
+  $("#bar").setAttribute("aria-valuenow", total ? Math.floor(done * 100 / total) : 0);
+
+  $("#chips").replaceChildren(...Object.entries(s.counts).filter(([, n]) => n).map(([status, n]) =>
+    el("span", { class: `s-${status}` }, el("span", { class: "dot" }), " ", STATUS[status], " ", el("b", { text: nf.format(n) }))));
+
+  const pill = $("#pill");
+  const paused = s.paused;
+  pill.className = "pill" + (s.worker.running ? (paused ? " paused" : " working") : "");
+  $("#pill-text").textContent = !s.worker.running ? (paused ? "Stopped · paused" : "Stopped")
+    : paused ? "Paused" : s.worker.in_ui ? "Working" : "Working (in a terminal)";
+  $("#activity").textContent = s.worker.running ? s.activity : (paused ? "The queue is paused." : "The worker is not running.");
+  $("#footer-info").textContent = `ytia ${s.version} · data folder: ${s.home}`;
+
+  const sig = JSON.stringify([s.worker, paused, s.pause_now, s.total > 0, s.activity.startsWith("Downloading")]);
+  if (sig !== lastControls) { lastControls = sig; renderControls(s); }
+  const chSig = JSON.stringify(s.channels);
+  if (chSig !== lastChannels) { lastChannels = chSig; renderChannels(s.channels); }
+}
+
+function renderControls(s) {
+  const buttons = [];
+  if (s.worker.running && s.worker.in_ui) {
+    buttons.push(el("button", { class: "btn", title: "The worker completes the current step, then stops.",
+      onclick: (e) => act(e.target, () => api("/api/worker/stop", {}).then(() => toast("The worker stops after the current step."))) }, "Stop"));
+  } else if (!s.worker.running) {
+    buttons.push(el("button", { class: "btn primary", disabled: !s.total,
+      onclick: (e) => act(e.target, async () => {
+        if (s.paused) await api("/api/resume", {});
+        await api("/api/worker/start", {});
+        toast("The worker started.");
+      }) }, "Start"));
+  }
+  if (s.paused) {
+    if (s.worker.running) buttons.push(el("button", { class: "btn primary",
+      onclick: (e) => act(e.target, () => api("/api/resume", {})) }, "Resume"));
+  } else if (s.worker.running) {
+    buttons.push(el("button", { class: "btn", title: "Complete the current step, then wait.",
+      onclick: (e) => act(e.target, () => api("/api/pause", {}).then(() => toast("Pausing after the current step."))) }, "Pause"));
+    if (s.activity.startsWith("Downloading")) buttons.push(el("button", { class: "btn", title: "Stop the download now. It continues from the same point later.",
+      onclick: (e) => act(e.target, () => api("/api/pause", { now: true })) }, "Pause now"));
+  }
+  $("#controls").replaceChildren(...buttons);
+}
+
+function renderChannels(channels) {
+  $("#sync-all").hidden = channels.length === 0;
+  if (!channels.length) {
+    $("#channels").replaceChildren(el("li", { class: "empty" }, "No channels yet. Paste a channel URL below."));
+    return;
+  }
+  $("#channels").replaceChildren(...channels.map((c) => el("li", {},
+    el("div", { class: "name" }, el("a", { href: c.url, target: "_blank", rel: "noopener" }, c.title || c.url),
+      el("div", { class: "meta" }, `prefix ${c.prefix || "–"} · ${nf.format(c.done)} of ${nf.format(c.total)} archived · checked ${fmtTime(c.last_synced_at)}`)),
+    el("button", { class: "btn small", onclick: (e) => act(e.target, async () => {
+      const [r] = await api("/api/sync", { channel_id: c.id });
+      toast(`${r.title}: ${r.added} new videos.`);
+    }, "Checking…") }, "Check for new videos"))));
+}
+
+// Banner with setup problems
+
+async function loadChecks() {
+  const checks = await api("/api/doctor");
+  $("#checks").replaceChildren(...checks.map((c) => el("li", { class: c.ok ? "ok" : "bad" },
+    el("span", { class: "mark" }, c.ok ? "✓" : "✗"),
+    el("div", {}, el("b", {}, c.name), " ", el("span", { class: "muted" }, c.detail),
+      c.ok ? null : el("div", { class: "fix" }, c.fix)))));
+  const problems = checks.filter((c) => !c.ok);
+  const banner = $("#banner");
+  banner.hidden = problems.length === 0;
+  banner.replaceChildren(el("b", {}, "Setup is not complete: "), problems.map((p) => p.name).join(", "), ".",
+    el("button", { class: "btn small", onclick: () => showTab("setup") }, "Open Setup"));
+}
+
+// Tabs
+
+let tab = "queue";
+function showTab(name) {
+  tab = name;
+  document.querySelectorAll("[role=tab]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.tab === name)));
+  document.querySelectorAll("[data-panel]").forEach((p) => (p.hidden = p.dataset.panel !== name));
+  if (name === "queue") loadVideos();
+  if (name === "settings") loadSettings();
+  if (name === "setup") loadChecks();
+}
+document.querySelectorAll("[role=tab]").forEach((b) => b.addEventListener("click", () => showTab(b.dataset.tab)));
+
+// Videos
+
+async function loadVideos() {
+  const status = $("#filter").value;
+  const rows = await api(`/api/videos?limit=500${status ? `&status=${status}` : ""}`);
+  $("#videos-empty").hidden = rows.length > 0;
+  $("#videos").replaceChildren(...rows.map((v) => {
+    const problem = v.status === "failed" || v.status === "skipped";
+    return el("tr", {},
+      el("td", { class: "title" }, v.title || "(no title)", el("br"),
+        el("a", { class: "mono", href: `https://www.youtube.com/watch?v=${v.video_id}`, target: "_blank", rel: "noopener" }, v.video_id)),
+      el("td", {}, el("span", { class: `badge s-${v.status}` }, el("span", { class: "dot" }), STATUS[v.status])),
+      el("td", {}, v.attempts),
+      el("td", { class: "detail" + (problem ? " err" : "") }, problem ? v.last_error :
+        v.ia_identifier ? el("a", { href: `https://archive.org/details/${v.ia_identifier}`, target: "_blank", rel: "noopener" }, v.ia_identifier) : ""));
+  }));
+}
+$("#filter").addEventListener("change", loadVideos);
+$("#retry-failed").addEventListener("click", (e) => act(e.target, async () => {
+  const r = await api("/api/retry", {}); toast(`${r.count} videos are back in the queue.`); loadVideos();
+}));
+$("#retry-skipped").addEventListener("click", (e) => act(e.target, async () => {
+  const r = await api("/api/retry", { skipped: true }); toast(`${r.count} videos are back in the queue.`); loadVideos();
+}));
+
+// Activity
+
+let lastEvent = 0;
+async function loadEvents() {
+  const events = await api(`/api/events?after=${lastEvent}`);
+  if (!events.length) return;
+  lastEvent = events[events.length - 1].id;
+  const list = $("#events");
+  for (const ev of events) {
+    list.prepend(el("li", { class: ev.level }, el("time", {}, fmtTime(ev.ts)),
+      el("span", { class: "msg" }, ev.video_id ? `${ev.video_id}: ${ev.message}` : ev.message)));
+  }
+  while (list.children.length > 300) list.lastChild.remove();
+  $("#events-empty").hidden = true;
+}
+
+// Settings
+
+async function loadSettings() {
+  const settings = await api("/api/settings");
+  $("#settings").replaceChildren(...settings.map((s) => {
+    const id = `set-${s.key}`;
+    const save = async (e) => {
+      try {
+        const r = await api("/api/settings", { key: s.key, value: e.target.value });
+        e.target.value = r.value;
+        toast(`Saved: ${SETTING_LABELS[s.key] || s.key}`);
+      } catch (err) { toast(err.message, true); loadSettings(); }
+    };
+    const input = SETTING_CHOICES[s.key]
+      ? el("select", { id, onchange: save }, SETTING_CHOICES[s.key].map((o) =>
+          el("option", { value: o, selected: o === s.value }, o === "" ? "(none)" : o)))
+      : el("input", { id, value: s.value, placeholder: s.default || "(empty)", onchange: save });
+    return el("div", { class: "setting" },
+      el("label", { for: id }, SETTING_LABELS[s.key] || s.key), el("p", {}, s.help), el("div", { class: "input" }, input));
+  }));
+}
+
+// Forms
+
+$("#add-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  act($("#add-btn"), async () => {
+    const r = await api("/api/channels", { url: $("#add-url").value, prefix: $("#add-prefix").value });
+    $("#add-url").value = ""; $("#add-prefix").value = "";
+    toast(`${r.title}: ${r.found} videos found, ${r.added} new. Prefix: ${r.prefix}`);
+    loadVideos();
+  }, "Reading video list…");
+});
+$("#sync-all").addEventListener("click", (e) => act(e.target, async () => {
+  const results = await api("/api/sync", {});
+  toast(results.map((r) => `${r.title}: ${r.added} new`).join("\n"));
+}, "Checking…"));
+$("#login-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  act(e.target.querySelector("button"), async () => {
+    await api("/api/ia-login", { email: $("#login-email").value, password: $("#login-password").value });
+    $("#login-password").value = "";
+    toast("Logged in to the Internet Archive.");
+    loadChecks();
+  }, "Logging in…");
+});
+
+let quitArmed = false;
+$("#quit").addEventListener("click", async (e) => {
+  if (!quitArmed) {
+    quitArmed = true;
+    e.target.textContent = state?.worker.in_ui ? "Click again: this also stops the worker" : "Click again to close";
+    setTimeout(() => { quitArmed = false; e.target.textContent = "Close ytia"; }, 4000);
+    return;
+  }
+  await api("/api/quit", {}).catch(() => {});
+  clearInterval(timer);
+  document.body.replaceChildren(el("div", { class: "closed" }, el("h1", {}, "ytia is closed"),
+    el("p", { class: "muted" }, "You can close this tab. Start ytia again to continue from the same place.")));
+});
+
+// Polling
+
+let tick = 0, offline = false;
+async function refresh() {
+  try {
+    renderState(await api("/api/state"));
+    await loadEvents();
+    if (offline) { offline = false; toast("Connected again."); }
+  } catch (e) {
+    if (!offline) { offline = true; toast("ytia does not respond. Is it still running?", true); }
+  }
+}
+const timer = setInterval(() => {
+  tick += 1;
+  refresh();
+  if (tab === "queue" && tick % 3 === 0 && !offline) loadVideos().catch(() => {});
+}, 2000);
+
+refresh().then(() => { loadVideos(); loadChecks(); });
+</script>
+</body>
+</html>
