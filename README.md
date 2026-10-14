@@ -1,17 +1,29 @@
-# ytia — YouTube to Internet Archive
+# archive-ferry: archive your YouTube channel to the Internet Archive
 
-`ytia` copies all videos of a YouTube channel to the [Internet Archive](https://archive.org).
-It works on one video at a time: download, upload, verify, delete the local copy, then the next video.
+`archive-ferry` copies all videos, shorts and streams of a YouTube channel to the [Internet Archive](https://archive.org) (archive.org). It uses [yt-dlp](https://github.com/yt-dlp/yt-dlp) to download and the official `internetarchive` library to upload.
+It works on one video at a time: download, upload, delete the local copy, then the next video.
 
 - **Pause and resume.** Stop at any time and continue later from the same point. You can let it run overnight.
-- **Resync.** Run `ytia sync` after new uploads. The tool adds only the new videos to the queue.
-- **Crash-safe.** A SQLite database records each step. After a crash or a power cut, the next `ytia run` continues the interrupted step.
-- **Small disk use.** The tool deletes the video files from your computer right after each upload. The database keeps only the metadata, so a resync never uploads a video again.
-- **Verified.** The Internet Archive checks the MD5 checksum of each file when it arrives. Later, the tool checks that the item shows the same checksums.
-- **Speed and time left.** The tool shows the download speed, the upload speed and the time left for the current video.
+- **Resync.** After new uploads on YouTube, check the channel again. archive-ferry adds only the new videos to the queue.
+- **Crash-safe.** A SQLite database records each step. After a crash or a power cut, archive-ferry continues the interrupted step.
+- **Small disk use.** archive-ferry deletes the video files from your computer right after each upload. The database keeps only a record of each video.
+- **Verified.** The Internet Archive checks the MD5 checksum of each file when it arrives. Later, archive-ferry checks that the item shows the same checksums.
+- **Speed and time left.** archive-ferry shows the download speed, the upload speed and the time left for the current video.
+- **Web page or terminal.** Use the local web page, or use the `archive-ferry` command.
 
-> **Use this tool only for content that you own or have the rights to share.**
-> Obey the YouTube Terms of Service and the Internet Archive [Terms of Use](https://archive.org/about/terms.php).
+> **Status: beta (v0.1).** The tests pass, but few real channels have gone through archive-ferry yet.
+> Test it with the Internet Archive test collection first (see [Test safely first](#test-safely-first)).
+
+## Disclaimer
+
+**Use archive-ferry only for content that you own or that you have the right to copy and share.**
+
+- You alone are responsible for what you download and what you upload with archive-ferry.
+- The authors and contributors of archive-ferry are **not responsible** for any use of this tool. This includes the upload of copyrighted content without permission, a breach of the YouTube Terms of Service or of the Internet Archive [Terms of Use](https://archive.org/about/terms.php), and any loss of data or of accounts.
+- archive-ferry is not affiliated with, endorsed by or connected to YouTube, Google or the Internet Archive.
+- archive-ferry comes **without any warranty**. Sections 15 and 16 of the [license](LICENSE) apply.
+
+This section is not legal advice. If you are not sure that you have the rights to a video, do not upload it.
 
 ## Requirements
 
@@ -29,25 +41,42 @@ winget install DenoLand.Deno
 
 ## Install
 
+archive-ferry is not on PyPI yet. Install it from the source code with [uv](https://docs.astral.sh/uv/) or [pipx](https://pipx.pypa.io):
+
 ```bash
-pipx install git+https://github.com/<you>/ytia
-# or, with uv:
-uv tool install git+https://github.com/<you>/ytia
+git clone https://github.com/Abusadat18/archive-ferry.git
+cd archive-ferry
+uv tool install .
+# or: pipx install .
 ```
 
-## Use the web page (no terminal)
+This adds two commands: `archive-ferry` (terminal) and `archive-ferry-ui` (web page).
 
-Start `ytia-ui`. On Windows, this program opens without a console window. It is in the same folder as `ytia`. You can pin it to the Start menu or put a shortcut on the desktop. You can also run `ytia ui` in a terminal.
+### Update
 
-The page opens in your browser at `http://127.0.0.1:8765`. It runs only on your computer. On the page, you can:
+YouTube changes often, and old versions of yt-dlp stop working. Update archive-ferry and its tools often:
 
-1. Log in to the Internet Archive (**Setup** tab).
-2. Paste a channel URL and click **Add channel**.
-3. Click **Start**, **Pause**, **Resume** or **Stop**.
-4. Click **Check for new videos** after new uploads.
-5. See the progress, the list of videos, the activity log and the settings.
+```bash
+git pull
+uv tool install --reinstall .
+# or: pipx install --force .
+```
 
-Keep the computer on while the worker runs. You can close the browser tab: the work continues. Click **Close ytia** at the bottom of the page to stop everything.
+## Use the web page
+
+Start `archive-ferry-ui`. On Windows, it opens without a console window, so you can pin it to the Start menu. You can also run `archive-ferry ui` in a terminal.
+
+The page opens in your browser at `http://127.0.0.1:8765`. It runs only on your computer.
+
+1. Open **Setup** and log in to the Internet Archive. Your password goes only to archive.org; archive-ferry keeps only the upload keys.
+2. Under **Channels**, paste the channel URL and click **Add channel**.
+3. Click **Start**. Use **Pause**, **Resume** or **Stop** at any time.
+4. After new uploads on YouTube, click **Check for new videos**.
+
+The front page shows the current download or upload with its speed and time left, the queue, and the last measured line speed.
+The sections at the bottom show the list of videos, the activity log (**Dispatches**), the settings and the setup checks.
+
+Keep the computer on while the worker runs. You can close the browser tab: the work continues. Click **Close archive-ferry** at the bottom of the page to stop everything.
 
 ## Test safely first
 
@@ -55,16 +84,16 @@ Use the Internet Archive test collection for the first runs. The Internet Archiv
 Use a separate data folder, so that the test queue does not mix with the real queue.
 
 ```bash
-ytia --home ~/ytia-test config set collection test_collection
-ytia --home ~/ytia-test add https://www.youtube.com/@yourchannel --prefix test-yourchannel
-ytia --home ~/ytia-test run
+archive-ferry --home ~/archive-ferry-test config set collection test_collection
+archive-ferry --home ~/archive-ferry-test add https://www.youtube.com/@yourchannel --prefix test-yourchannel
+archive-ferry --home ~/archive-ferry-test run
 ```
 
-Stop the worker after 2 or 3 videos. Examine the items on archive.org. Then delete the `~/ytia-test` folder and start the real run.
+Stop the worker after 2 or 3 videos. Examine the items on archive.org. Then delete the `~/archive-ferry-test` folder and start the real run.
 
-## Quick start (terminal)
+## Use the terminal
 
-1. Connect your Internet Archive account. The command asks for your e-mail and password and stores the keys in `ia.ini`.
+1. Connect your Internet Archive account. The command asks for your e-mail and password and stores the upload keys in `ia.ini`.
 
    ```bash
    ia configure
@@ -73,61 +102,59 @@ Stop the worker after 2 or 3 videos. Examine the items on archive.org. Then dele
 2. Check the setup.
 
    ```bash
-   ytia doctor
+   archive-ferry doctor
    ```
 
-3. Add the channel. The tool reads the list of videos, shorts and streams.
+3. Add the channel. archive-ferry reads the list of videos, shorts and streams.
 
    ```bash
-   ytia add https://www.youtube.com/@yourchannel --prefix yourchannel
+   archive-ferry add https://www.youtube.com/@yourchannel --prefix yourchannel
    ```
 
 4. Start the worker.
 
    ```bash
-   ytia run
+   archive-ferry run
    ```
 
 Each video becomes one Internet Archive item: `https://archive.org/details/<prefix>-<video id>`.
 Choose the prefix carefully. The identifier of an item cannot change after the upload.
 
-## Daily use
-
 | Task | Command |
 |---|---|
-| Start or continue the work | `ytia run` |
-| Pause after the current step | `ytia pause` (or press Ctrl+C one time in the worker window) |
-| Pause the current download or upload at once | `ytia pause --now` |
-| Continue after a pause | `ytia resume` |
-| Add new uploads to the queue | `ytia sync` |
-| See the progress | `ytia status` |
-| See recent events | `ytia log` |
-| See failed videos | `ytia list --status failed --status skipped` |
-| Try failed videos again | `ytia retry` (add `--skipped` for skipped videos) |
-| Open the web page | `ytia ui` |
+| Start or continue the work | `archive-ferry run` |
+| Pause after the current step | `archive-ferry pause` (or press Ctrl+C one time in the worker window) |
+| Pause the current download or upload at once | `archive-ferry pause --now` |
+| Continue after a pause | `archive-ferry resume` |
+| Add new uploads to the queue | `archive-ferry sync` |
+| See the progress, speed and time left | `archive-ferry status` |
+| See recent events | `archive-ferry log` |
+| See failed videos | `archive-ferry list --status failed --status skipped` |
+| Try failed videos again | `archive-ferry retry` (add `--skipped` for skipped videos) |
+| Open the web page | `archive-ferry ui` |
 
-Press Ctrl+C two times to stop the worker at once. The next `ytia run` continues the interrupted step.
+Press Ctrl+C two times to stop the worker at once. The next `archive-ferry run` continues the interrupted step.
 yt-dlp continues a partial download. An interrupted upload starts again for the file that was not complete. Files that are already on the Internet Archive do not upload again.
 
 ## Settings
 
-Run `ytia config show` to see all settings. Run `ytia config set <key> <value>` to change one.
+Change the settings on the web page (**Settings**), or with `archive-ferry config set <key> <value>`. Run `archive-ferry config show` to see all settings.
 
 | Setting | Default | Description |
 |---|---|---|
+| `cookies_from_browser` | | Use the YouTube login of a browser when YouTube blocks downloads. Firefox works best. |
+| `keep_files` | `false` | Keep the video files on your computer after the upload |
+| `rate_limit` | | Maximum download speed, for example `5M` |
+| `collection` | `opensource_movies` | Internet Archive collection. New accounts can upload only to `opensource_movies`. |
 | `format` | `bv*+ba/b` | yt-dlp format selector |
 | `merge_format` | `mp4` | Container for merged video and audio |
 | `subtitles` | `true` | Download and upload subtitles |
-| `cookies_from_browser` | | Read YouTube cookies from a browser, for example `firefox` |
 | `cookies_file` | | Path to a `cookies.txt` file |
 | `js_runtime` | | `deno` (default), `node`, `bun` or `quickjs` |
-| `rate_limit` | | Maximum download speed, for example `5M` |
 | `pause_between` | `10` | Seconds between two videos |
 | `max_attempts` | `3` | Attempts for each video before the worker skips it |
 | `max_unverified` | `10` | Uploads that can wait for confirmation before the next download starts |
 | `min_free_gb` | `5` | The worker pauses when the free disk space is less than this |
-| `keep_files` | `false` | Keep the video files on your computer after the upload |
-| `collection` | `opensource_movies` | Internet Archive collection |
 
 ## How it works
 
@@ -139,63 +166,67 @@ pending → downloading → downloaded → uploading → uploaded → done
                 (retry with backoff, then skipped)
 ```
 
+- The worker takes interrupted work first. Then it takes new videos, oldest first.
+- Only one video is in transfer at a time. Only one worker can run.
+- A failed video waits 5 minutes, then 10 minutes, then 20 minutes, and so on. After 3 attempts, the worker skips it.
+- If YouTube asks for a sign-in ("confirm you're not a bot"), the worker pauses the queue. Set `cookies_from_browser`, then resume.
+- When the free disk space is too low, the worker pauses the queue.
+- On Windows and macOS, the computer does not go to sleep while the worker runs. On Linux, use `systemd-inhibit archive-ferry run`.
+
 ### What stays on your computer
 
-After an upload, the tool deletes the folder of that video. The database keeps one row for each video:
+After an upload, archive-ferry deletes the folder of that video. The database keeps one row for each video:
 
 - the YouTube ID, the title, the upload date and the duration
 - the Internet Archive identifier
 - the size, the MD5 checksum of each file, the upload time and how long the upload took
 
 Resync uses the YouTube ID. A video that is in the database never goes back in the queue.
-If the Internet Archive does not show the item within 48 hours, the tool downloads the video again and uploads it again.
-To keep the files on your computer, run `ytia config set keep_files true`.
-
-### Speed and time left
-
-- The **Now** panel on the web page shows the current download or upload: the progress, the speed and the time left.
-- `ytia status` shows the same data in the terminal.
-- The tool also shows the last measured download speed and upload speed. Both are in MB/s and in Mbit/s, the unit of internet plans.
-- The speed is the average of the last 10 seconds, so the estimate does not jump.
-
-- The worker takes interrupted work first. Then it takes new videos, oldest first.
-- A failed video waits 5 minutes, then 10 minutes, then 20 minutes, and so on.
-- If YouTube asks for a sign-in ("confirm you're not a bot"), the worker pauses the queue. Set `cookies_from_browser`, then run `ytia resume`.
-- When the free disk space is too low, the worker pauses the queue.
-- On Windows and macOS, the computer does not go to sleep while the worker runs. On Linux, use `systemd-inhibit ytia run`.
+If the Internet Archive does not show the item within 48 hours, archive-ferry downloads the video again and uploads it again.
 
 ### Files in each item
 
 - The video
-- `<id>.info.json` — YouTube metadata. The tool removes the signed stream URLs (they contain your IP address) and local paths before the upload.
-- `<id>.jpg` — the thumbnail
-- `<id>.description` — the full description
-- `<id>.<lang>.vtt` — subtitles
+- `<id>.info.json`: the YouTube metadata. archive-ferry removes the signed stream URLs (they contain your IP address) and local paths before the upload.
+- `<id>.jpg`: the thumbnail
+- `<id>.description`: the full description
+- `<id>.<lang>.vtt`: the subtitles
 
 ### Data folder
 
-All data is in `~/ytia`. To use a different folder, for example a large external disk, use `--home` or set `YTIA_HOME`:
+All data is in `~/archive-ferry`. To use a different folder, for example a large external disk, use `--home` or set `ARCHIVE_FERRY_HOME`:
 
 ```bash
-ytia --home D:\ytia run
+archive-ferry --home D:\archive-ferry run
 ```
 
 | File | Content |
 |---|---|
-| `ytia.db` | The queue and the settings |
-| `ytia.log` | The detailed log |
+| `archive-ferry.db` | The queue, the video records and the settings |
+| `archive-ferry.log` | The detailed log |
 | `downloads/` | Videos that are not uploaded yet |
+
+The project was called `ytia` before. The `ytia` and `ytia-ui` commands still work. If a `~/ytia` folder exists, archive-ferry keeps using it and its `ytia.db`, so no progress is lost.
+
+## Known limits
+
+- The install needs a terminal. A Windows installer is planned.
+- YouTube cookies from Chrome often do not work on Windows. Use Firefox, or export a `cookies.txt` file.
+- archive-ferry handles one video at a time. It does not download the next video during an upload.
+- archive-ferry was tested on Windows. macOS and Linux are expected to work, but nobody has tested them yet.
 
 ## Development
 
 ```bash
 uv sync
 uv run pytest
-uv run ytia --help
+uv run archive-ferry --help
 ```
+
+Bug reports and pull requests are welcome. Please run the tests before you send a pull request.
 
 ## License
 
-To be decided before the first release. The `internetarchive` library uses AGPL-3.0.
+archive-ferry is free software under the [GNU Affero General Public License v3.0 or later](LICENSE) (AGPL-3.0-or-later).
 
-The web page uses three fonts that ship with ytia: Newsreader, Libre Franklin and UnifrakturMaguntia. All three use the SIL Open Font License 1.1. The license files are in `src/ytia/static/fonts/`. ytia does not load fonts from the internet.
+The web page uses three fonts that ship with archive-ferry: Newsreader, Libre Franklin and UnifrakturMaguntia. All three use the SIL Open Font License 1.1. The license files are in `src/archive_ferry/static/fonts/`. archive-ferry does not load fonts from the internet.

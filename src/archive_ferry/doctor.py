@@ -26,7 +26,7 @@ def run_checks(paths: Paths, settings: Settings) -> list[Check]:
     import yt_dlp.version
 
     checks = [
-        Check("ytia", True, __version__),
+        Check("archive-ferry", True, __version__),
         Check("Python", True, platform.python_version()),
         Check("yt-dlp", True, yt_dlp.version.__version__),
     ]
@@ -50,7 +50,7 @@ def run_checks(paths: Paths, settings: Settings) -> list[Check]:
             "Internet Archive keys",
             keys,
             "found" if keys else "not found",
-            "Log in to the Internet Archive (ytia ui → Setup, or run: ia configure)",
+            "Log in to the Internet Archive (archive-ferry ui → Setup, or run: ia configure)",
         )
     )
     free_gb = shutil.disk_usage(paths.downloads).free / 1e9

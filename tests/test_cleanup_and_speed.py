@@ -2,9 +2,9 @@ import json
 
 import pytest
 
-from ytia.db import DONE, FAILED, SKIPPED, UPLOADED
-from ytia.progress import Aborted
-from ytia.worker import CONFIRM_TIMEOUT
+from archive_ferry.db import DONE, FAILED, SKIPPED, UPLOADED
+from archive_ferry.progress import Aborted
+from archive_ferry.worker import CONFIRM_TIMEOUT
 
 from .test_worker import clock, downloader, uploader, worker  # noqa: F401  (pytest fixtures)
 

@@ -7,9 +7,9 @@ import time
 
 import pytest
 
-from ytia.db import DONE, Database
-from ytia.sync import ChannelListing
-from ytia.web import App, WorkerHost, make_server
+from archive_ferry.db import DONE, Database
+from archive_ferry.sync import ChannelListing
+from archive_ferry.web import App, WorkerHost, make_server
 
 from .test_worker import FakeDownloader, FakeUploader
 
@@ -59,7 +59,7 @@ def test_page_and_state(client):
     status, page = client.get("/")
     assert status == 200 and b"<title>The Archive Record" in page
     status, state = client.get("/api/state")
-    assert status == 200 and state["app"] == "ytia" and state["total"] == 0
+    assert status == 200 and state["app"] == "archive-ferry" and state["total"] == 0
 
 
 def test_serves_bundled_fonts_only(client):

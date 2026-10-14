@@ -1,6 +1,6 @@
 import json
 
-from ytia.downloader import clean_info_json, completed_files
+from archive_ferry.downloader import clean_info_json, completed_files
 
 
 def test_completed_files_skips_partial_files(tmp_path):

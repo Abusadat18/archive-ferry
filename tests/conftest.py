@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from ytia.config import Paths, Settings
-from ytia.db import Database
+from archive_ferry.config import Paths, Settings
+from archive_ferry.db import Database
 
 
 @pytest.fixture

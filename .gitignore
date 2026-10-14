@@ -6,7 +6,7 @@ dist/
 build/
 *.egg-info/
 uv.lock.bak
-ytia-data/
+archive-ferry-data/
 *.db
 *.db-wal
 *.db-shm

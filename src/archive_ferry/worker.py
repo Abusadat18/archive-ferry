@@ -27,7 +27,7 @@ from .db import (
 from .downloader import completed_files, download_video, find_info_json
 from .progress import Aborted, Meter, fmt_duration, fmt_eta, fmt_size, fmt_speed
 
-log = logging.getLogger("ytia.worker")
+log = logging.getLogger("archive_ferry.worker")
 
 RETRY_BASE_SECONDS = 5 * 60
 RETRY_MAX_SECONDS = 6 * 3600
@@ -38,7 +38,7 @@ CHECK_INTERVAL = 5 * 60
 CONFIRM_TIMEOUT = 48 * 3600
 PROGRESS_INTERVAL = 2.0
 
-# Download errors that a retry cannot fix. `ytia retry --skipped` puts these videos back.
+# Download errors that a retry cannot fix. `archive-ferry retry --skipped` puts these videos back.
 _PERMANENT_ERRORS = (
     "Private video",
     "Video unavailable",
@@ -306,8 +306,8 @@ class Worker:
                 "error",
                 f"YouTube blocked the download: {message}\n"
                 "The queue is paused. Give yt-dlp your YouTube cookies, for example:\n"
-                "  ytia config set cookies_from_browser firefox\n"
-                "Then run: ytia resume",
+                "  archive-ferry config set cookies_from_browser firefox\n"
+                "Then run: archive-ferry resume",
                 video_id,
             )
             return
@@ -351,7 +351,7 @@ class Worker:
         self._event(
             "error",
             f"Only {free_gb:.1f} GB of disk space is free. The queue is paused."
-            " Make space free, then run: ytia resume",
+            " Make space free, then run: archive-ferry resume",
         )
         return False
 

@@ -1,6 +1,6 @@
 import pytest
 
-from ytia.progress import Meter, fmt_eta, fmt_speed
+from archive_ferry.progress import Meter, fmt_eta, fmt_speed
 
 
 class Clock:

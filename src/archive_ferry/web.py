@@ -1,4 +1,4 @@
-"""Local web interface. `ytia ui` (or the `ytia-ui` launcher) opens it in the browser.
+"""Local web interface. `archive-ferry ui` (or the `archive-ferry-ui` launcher) opens it in the browser.
 
 The server listens on 127.0.0.1 only. It accepts only requests whose Host header
 names that address, which blocks DNS rebinding, and POST requests must be JSON,
@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 import threading
 import urllib.request
 import webbrowser
@@ -23,7 +22,7 @@ from urllib.parse import parse_qs, urlparse
 
 from . import __version__
 from .archive import Uploader, slugify
-from .config import DEFAULTS, HELP, Paths, Settings
+from .config import DEFAULTS, HELP, Paths, Settings, home_from_env
 from .db import FAILED, SKIPPED, STATUSES, Database
 from .doctor import run_checks
 from .lock import WorkerLock
@@ -31,7 +30,7 @@ from .power import KeepAwake
 from .progress import current_transfer
 from .sync import Lister, fetch_listing, normalize_channel_url, sync_channel
 
-log = logging.getLogger("ytia.web")
+log = logging.getLogger("archive_ferry.web")
 
 DEFAULT_PORT = 8765
 _ASSET_TYPES = {".woff2": "font/woff2", ".txt": "text/plain; charset=utf-8"}
@@ -69,7 +68,7 @@ class WorkerHost:
             if not self._lock.acquire():
                 raise ApiError(HTTPStatus.CONFLICT, "A worker already runs in a terminal. Stop it there first.")
             ready = threading.Event()
-            self.thread = threading.Thread(target=self._run, args=(uploader, ready), name="ytia-worker", daemon=True)
+            self.thread = threading.Thread(target=self._run, args=(uploader, ready), name="archive-ferry-worker", daemon=True)
             self.thread.start()
             ready.wait(5)
 
@@ -139,7 +138,7 @@ class App:
                 }
             )
         return {
-            "app": "ytia",
+            "app": "archive-ferry",
             "version": __version__,
             "home": str(self.paths.home),
             "worker": {"running": running, "in_ui": here},
@@ -243,7 +242,7 @@ class App:
 
 
 def _make_handler(app: App, allowed_hosts: set[str]) -> type[BaseHTTPRequestHandler]:
-    static = files("ytia").joinpath("static")
+    static = files("archive_ferry").joinpath("static")
     page = static.joinpath("index.html").read_bytes()
     # A fixed table of the bundled assets, so a request path can never reach another file.
     assets = {
@@ -253,7 +252,7 @@ def _make_handler(app: App, allowed_hosts: set[str]) -> type[BaseHTTPRequestHand
     }
 
     class Handler(BaseHTTPRequestHandler):
-        server_version = f"ytia/{__version__}"
+        server_version = f"archive-ferry/{__version__}"
 
         def log_message(self, fmt: str, *args: object) -> None:
             log.debug("%s - %s", self.address_string(), fmt % args)
@@ -320,10 +319,10 @@ def make_server(app: App, port: int = DEFAULT_PORT) -> ThreadingHTTPServer:
     return server
 
 
-def _is_ytia(url: str) -> bool:
+def _is_archive_ferry(url: str) -> bool:
     try:
         with urllib.request.urlopen(url + "api/state", timeout=2) as response:
-            return json.load(response).get("app") == "ytia"
+            return json.load(response).get("app") == "archive-ferry"
     except Exception:
         return False
 
@@ -338,13 +337,13 @@ def serve(
     try:
         server = make_server(App(paths), port)
     except OSError:
-        if _is_ytia(url):
-            announce(f"ytia is already open at {url}")
+        if _is_archive_ferry(url):
+            announce(f"archive-ferry is already open at {url}")
             if open_browser:
                 webbrowser.open(url)
             return
         raise SystemExit(f"Port {port} is in use by a different program. Use --port to choose a different port.")
-    announce(f"ytia is open at {url} . Keep this window open. Use 'Close ytia' on the page to stop.")
+    announce(f"archive-ferry is open at {url} . Keep this window open. Use 'Close archive-ferry' on the page to stop.")
     if open_browser:
         threading.Timer(0.5, webbrowser.open, args=(url,)).start()
     try:
@@ -356,9 +355,8 @@ def serve(
 
 
 def main() -> None:
-    """Entry point of the `ytia-ui` launcher, which has no console window on Windows."""
-    home = os.environ.get("YTIA_HOME")
-    paths = Paths.from_home(Path(home) if home else None)
+    """Entry point of the `archive-ferry-ui` launcher, which has no console window on Windows."""
+    paths = Paths.from_home(home_from_env())
     logging.basicConfig(
         filename=paths.log,
         encoding="utf-8",

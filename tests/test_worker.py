@@ -5,10 +5,10 @@ from pathlib import Path
 
 import pytest
 
-from ytia.archive import IdentifierTaken
-from ytia.db import DONE, DOWNLOADED, FAILED, PENDING, SKIPPED, UPLOADED
-from ytia.downloader import Aborted, DownloadResult, completed_files
-from ytia.worker import Worker
+from archive_ferry.archive import IdentifierTaken
+from archive_ferry.db import DONE, DOWNLOADED, FAILED, PENDING, SKIPPED, UPLOADED
+from archive_ferry.downloader import Aborted, DownloadResult, completed_files
+from archive_ferry.worker import Worker
 
 
 class FakeClock:

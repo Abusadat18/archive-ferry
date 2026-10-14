@@ -18,7 +18,7 @@ from .ytdl import base_options
 
 __all__ = ["Aborted", "DownloadResult", "clean_info_json", "completed_files", "download_video", "find_info_json"]
 
-log = logging.getLogger("ytia.download")
+log = logging.getLogger("archive_ferry.download")
 
 MEDIA_SUFFIXES = {".mp4", ".mkv", ".webm", ".m4a", ".mp3", ".opus", ".mov"}
 # yt-dlp temporary files, and the separate video/audio streams that exist before the merge.

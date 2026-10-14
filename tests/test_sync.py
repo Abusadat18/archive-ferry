@@ -1,6 +1,6 @@
 import pytest
 
-from ytia.sync import ChannelListing, default_prefix, normalize_channel_url, sync_channel
+from archive_ferry.sync import ChannelListing, default_prefix, normalize_channel_url, sync_channel
 
 
 @pytest.mark.parametrize(

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -51,13 +52,15 @@ class Paths:
 
     @classmethod
     def from_home(cls, home: Path | None) -> "Paths":
-        home = (home or Path.home() / "ytia").expanduser().resolve()
+        home = (home or default_home()).expanduser().resolve()
         (home / "downloads").mkdir(parents=True, exist_ok=True)
         return cls(home)
 
     @property
     def db(self) -> Path:
-        return self.home / "ytia.db"
+        # The project was called ytia before; keep using a database made by that version.
+        legacy = self.home / "ytia.db"
+        return legacy if legacy.exists() else self.home / "archive-ferry.db"
 
     @property
     def downloads(self) -> Path:
@@ -69,7 +72,18 @@ class Paths:
 
     @property
     def log(self) -> Path:
-        return self.home / "ytia.log"
+        return self.home / "archive-ferry.log"
+
+
+def home_from_env() -> Path | None:
+    value = os.environ.get("ARCHIVE_FERRY_HOME") or os.environ.get("YTIA_HOME")
+    return Path(value) if value else None
+
+
+def default_home() -> Path:
+    home = Path.home() / "archive-ferry"
+    legacy = Path.home() / "ytia"
+    return legacy if legacy.is_dir() and not home.exists() else home
 
 
 class Settings:
@@ -96,7 +110,7 @@ class Settings:
     def set(self, key: str, value: str) -> str:
         """Validate and store a setting. Returns the stored value."""
         if key not in DEFAULTS:
-            raise ValueError(f"Unknown setting '{key}'. Run `ytia config show` to see all settings.")
+            raise ValueError(f"Unknown setting '{key}'. Run `archive-ferry config show` to see all settings.")
         value = value.strip()
         if key in _BOOL_KEYS:
             if value.lower() not in _TRUE | _FALSE:

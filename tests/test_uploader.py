@@ -2,8 +2,8 @@ from pathlib import Path
 
 import pytest
 
-from ytia.archive import Uploader, file_md5
-from ytia.progress import Aborted
+from archive_ferry.archive import Uploader, file_md5
+from archive_ferry.progress import Aborted
 
 
 class FakeItem:

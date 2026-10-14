@@ -72,7 +72,7 @@ def build_metadata(info: dict, collection: str) -> dict:
         "originalurl": url,
         "source": url,
         "external-identifier": f"urn:youtube:{video_id}",
-        "scanner": f"ytia {__version__}",
+        "scanner": f"archive-ferry {__version__}",
     }
     if "creative commons" in (info.get("license") or "").lower():
         metadata["licenseurl"] = YOUTUBE_CC_LICENSE

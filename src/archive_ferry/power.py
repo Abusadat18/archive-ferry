@@ -12,7 +12,7 @@ _ES_SYSTEM_REQUIRED = 0x00000001
 
 
 class KeepAwake:
-    """Windows and macOS only. On Linux, start the worker with `systemd-inhibit ytia run`."""
+    """Windows and macOS only. On Linux, start the worker with `systemd-inhibit archive-ferry run`."""
 
     def __init__(self) -> None:
         self._proc: subprocess.Popen | None = None

@@ -3,8 +3,8 @@ import time
 
 from typer.testing import CliRunner
 
-from ytia.cli import app
-from ytia.db import Database
+from archive_ferry.cli import app
+from archive_ferry.db import Database
 
 runner = CliRunner()
 
@@ -12,7 +12,7 @@ runner = CliRunner()
 def test_status_shows_speeds(tmp_path):
     home = tmp_path / "home"
     assert runner.invoke(app, ["--home", str(home), "status"]).exit_code == 0
-    db = Database(home / "ytia.db")
+    db = Database(home / "archive-ferry.db")
     db.set_setting("speeds", json.dumps({"upload": {"bps": 1_250_000, "at": time.time()}}))
     db.close()
     result = runner.invoke(app, ["--home", str(home), "status"])

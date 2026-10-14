@@ -2,7 +2,7 @@ from urllib.parse import quote
 
 import pytest
 
-from ytia.archive import MAX_DESCRIPTION_BYTES, YOUTUBE_CC_LICENSE, build_metadata, make_identifier
+from archive_ferry.archive import MAX_DESCRIPTION_BYTES, YOUTUBE_CC_LICENSE, build_metadata, make_identifier
 
 
 def test_make_identifier():

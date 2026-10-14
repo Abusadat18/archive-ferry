@@ -1,4 +1,4 @@
-from ytia.db import DOWNLOADED, FAILED, PENDING, SKIPPED, UPLOADING, Database
+from archive_ferry.db import DOWNLOADED, FAILED, PENDING, SKIPPED, UPLOADING, Database
 
 
 def test_next_video_takes_oldest_pending_first(db: Database, channel):

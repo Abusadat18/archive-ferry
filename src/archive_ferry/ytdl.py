@@ -6,7 +6,7 @@ import logging
 
 from .config import Settings
 
-log = logging.getLogger("ytia.yt-dlp")
+log = logging.getLogger("archive_ferry.yt-dlp")
 
 
 class _Logger:

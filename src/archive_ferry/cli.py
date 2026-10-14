@@ -44,16 +44,19 @@ state = _State()
 
 def _version(value: bool) -> None:
     if value:
-        console.print(f"ytia {__version__}")
+        console.print(f"archive-ferry {__version__}")
         raise typer.Exit()
 
 
 @app.callback()
 def main(
     home: Optional[Path] = typer.Option(
-        None, "--home", envvar="YTIA_HOME", help="Folder for the database and downloads. Default: ~/ytia"
+        None,
+        "--home",
+        envvar=["ARCHIVE_FERRY_HOME", "YTIA_HOME"],
+        help="Folder for the database and downloads. Default: ~/archive-ferry",
     ),
-    verbose: bool = typer.Option(False, "--verbose", "-v", help="Write debug messages to ytia.log."),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Write debug messages to archive-ferry.log."),
     version: bool = typer.Option(False, "--version", callback=_version, is_eager=True, help="Show the version."),
 ) -> None:
     state.paths = Paths.from_home(home)
@@ -108,7 +111,7 @@ def add(
     db = _db()
     channel = db.add_channel(base, prefix.lower() if prefix else None)
     _sync(db, channel)
-    console.print("Next step: [bold]ytia run[/]")
+    console.print("Next step: [bold]archive-ferry run[/]")
 
 
 @app.command()
@@ -118,12 +121,12 @@ def sync(channel: Optional[str] = typer.Argument(None, help="Channel ID number o
     if channel is None:
         rows = db.channels()
         if not rows:
-            _fail("No channels. Add one with: ytia add <channel-url>")
+            _fail("No channels. Add one with: archive-ferry add <channel-url>")
     else:
         ref = channel if channel.isdigit() else normalize_channel_url(channel)
         row = db.find_channel(ref)
         if row is None:
-            _fail(f"Unknown channel: {channel}. Run `ytia channels` to see the list.")
+            _fail(f"Unknown channel: {channel}. Run `archive-ferry channels` to see the list.")
         rows = [row]
     for row in rows:
         _sync(db, row)
@@ -154,10 +157,10 @@ def run() -> None:
 
     db = _db()
     if not db.channels():
-        _fail("No channels. Add one with: ytia add <channel-url>")
+        _fail("No channels. Add one with: archive-ferry add <channel-url>")
     lock = WorkerLock(state.paths.lock)
     if not lock.acquire():
-        _fail("A worker is already running. Use `ytia status` to see what it does.")
+        _fail("A worker is already running. Use `archive-ferry status` to see what it does.")
     try:
         uploader = Uploader()
         if not uploader.has_credentials():
@@ -181,13 +184,13 @@ def run() -> None:
 
         signal.signal(signal.SIGINT, on_sigint)
         if settings.paused:
-            console.print("[yellow]The queue is paused. Run `ytia resume` in another terminal to continue.[/]")
+            console.print("[yellow]The queue is paused. Run `archive-ferry resume` in another terminal to continue.[/]")
         console.print(f"Worker started. Data folder: {state.paths.home}. Press Ctrl+C to stop.")
         with KeepAwake():
             worker.run()
-        console.print("Worker stopped. Run [bold]ytia run[/] to continue from the same place.")
+        console.print("Worker stopped. Run [bold]archive-ferry run[/] to continue from the same place.")
     except KeyboardInterrupt:
-        console.print("[yellow]Stopped. Run `ytia run` to continue from the same place.[/]")
+        console.print("[yellow]Stopped. Run `archive-ferry run` to continue from the same place.[/]")
     finally:
         db.set_setting("activity", "Idle")
         lock.release()
@@ -199,7 +202,7 @@ def pause(
         False, "--now", help="Stop the current download or upload at once. Without this option, the current step completes first."
     ),
 ) -> None:
-    """Pause the worker. Use `ytia resume` to continue."""
+    """Pause the worker. Use `archive-ferry resume` to continue."""
     db = _db()
     db.set_setting("paused", "now" if now else "1")
     if not WorkerLock.is_held(state.paths.lock):
@@ -218,7 +221,7 @@ def resume() -> None:
     if WorkerLock.is_held(state.paths.lock):
         console.print("Resumed.")
     else:
-        console.print("Resumed. No worker is running. Start one with: [bold]ytia run[/]")
+        console.print("Resumed. No worker is running. Start one with: [bold]archive-ferry run[/]")
 
 
 @app.command()
@@ -254,7 +257,7 @@ def status() -> None:
             measured = speeds[phase]
             console.print(f"Last {label.lower()} speed: {fmt_speed(measured['bps'])} ({_time(measured['at'])})")
     if counts[FAILED] or counts[SKIPPED]:
-        console.print("See the problems with: ytia list --status failed --status skipped")
+        console.print("See the problems with: archive-ferry list --status failed --status skipped")
 
 
 @app.command(name="list")

@@ -1,18 +1,33 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
 [project]
-name = "ytia"
+name = "archive-ferry"
 version = "0.1.0"
-description = "Mirror a YouTube channel to the Internet Archive, one video at a time, with pause, resume and resync."
+description = "Archive your YouTube channel to the Internet Archive (archive.org): resumable, one video at a time, with a local web UI."
 readme = "README.md"
+license = "AGPL-3.0-or-later"
+license-files = ["LICENSE", "src/archive_ferry/static/fonts/OFL-*.txt"]
 requires-python = ">=3.10"
-keywords = ["youtube", "internet-archive", "archive.org", "yt-dlp", "backup"]
+keywords = [
+    "youtube",
+    "internet-archive",
+    "archive.org",
+    "yt-dlp",
+    "backup",
+    "archiving",
+    "datahoarder",
+    "youtube-channel-backup",
+]
 classifiers = [
+    "Development Status :: 4 - Beta",
     "Environment :: Console",
+    "Environment :: Web Environment",
+    "Intended Audience :: End Users/Desktop",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
+    "Topic :: Multimedia :: Video",
     "Topic :: System :: Archiving :: Backup",
 ]
 dependencies = [
@@ -22,17 +37,24 @@ dependencies = [
     "rich>=13",
 ]
 
+[project.urls]
+Homepage = "https://github.com/Abusadat18/archive-ferry"
+Issues = "https://github.com/Abusadat18/archive-ferry/issues"
+
 [project.scripts]
-ytia = "ytia.cli:app"
+archive-ferry = "archive_ferry.cli:app"
+# The project was called ytia before; the old command keeps working.
+ytia = "archive_ferry.cli:app"
 
 [project.gui-scripts]
-ytia-ui = "ytia.web:main"
+archive-ferry-ui = "archive_ferry.web:main"
+ytia-ui = "archive_ferry.web:main"
 
 [dependency-groups]
 dev = ["pytest>=8"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/ytia"]
+packages = ["src/archive_ferry"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
