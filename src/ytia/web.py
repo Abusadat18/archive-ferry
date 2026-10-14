@@ -34,6 +34,7 @@ from .sync import Lister, fetch_listing, normalize_channel_url, sync_channel
 log = logging.getLogger("ytia.web")
 
 DEFAULT_PORT = 8765
+_ASSET_TYPES = {".woff2": "font/woff2", ".txt": "text/plain; charset=utf-8"}
 
 
 class ApiError(Exception):
@@ -242,7 +243,14 @@ class App:
 
 
 def _make_handler(app: App, allowed_hosts: set[str]) -> type[BaseHTTPRequestHandler]:
-    page = files("ytia").joinpath("static/index.html").read_bytes()
+    static = files("ytia").joinpath("static")
+    page = static.joinpath("index.html").read_bytes()
+    # A fixed table of the bundled assets, so a request path can never reach another file.
+    assets = {
+        f"/static/fonts/{entry.name}": (entry.read_bytes(), _ASSET_TYPES[Path(entry.name).suffix])
+        for entry in static.joinpath("fonts").iterdir()
+        if Path(entry.name).suffix in _ASSET_TYPES
+    }
 
     class Handler(BaseHTTPRequestHandler):
         server_version = f"ytia/{__version__}"
@@ -250,11 +258,11 @@ def _make_handler(app: App, allowed_hosts: set[str]) -> type[BaseHTTPRequestHand
         def log_message(self, fmt: str, *args: object) -> None:
             log.debug("%s - %s", self.address_string(), fmt % args)
 
-        def _send(self, status: int, body: bytes, content_type: str) -> None:
+        def _send(self, status: int, body: bytes, content_type: str, cache: str = "no-store") -> None:
             self.send_response(status)
             self.send_header("Content-Type", content_type)
             self.send_header("Content-Length", str(len(body)))
-            self.send_header("Cache-Control", "no-store")
+            self.send_header("Cache-Control", cache)
             self.send_header("X-Content-Type-Options", "nosniff")
             self.send_header("X-Frame-Options", "DENY")
             self.end_headers()
@@ -276,8 +284,12 @@ def _make_handler(app: App, allowed_hosts: set[str]) -> type[BaseHTTPRequestHand
         def do_GET(self) -> None:
             if self.headers.get("Host") not in allowed_hosts:
                 return self._json(HTTPStatus.FORBIDDEN, {"error": "Forbidden host"})
-            if urlparse(self.path).path in ("/", "/index.html"):
+            path = urlparse(self.path).path
+            if path in ("/", "/index.html"):
                 return self._send(HTTPStatus.OK, page, "text/html; charset=utf-8")
+            if path in assets:
+                body, content_type = assets[path]
+                return self._send(HTTPStatus.OK, body, content_type, cache="max-age=86400")
             self._dispatch("GET", {})
 
         def do_POST(self) -> None:

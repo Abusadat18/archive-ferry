@@ -57,9 +57,16 @@ def client(paths, settings, uploader):
 
 def test_page_and_state(client):
     status, page = client.get("/")
-    assert status == 200 and b"<title>ytia</title>" in page
+    assert status == 200 and b"<title>The Archive Record" in page
     status, state = client.get("/api/state")
     assert status == 200 and state["app"] == "ytia" and state["total"] == 0
+
+
+def test_serves_bundled_fonts_only(client):
+    status, body = client.get("/static/fonts/newsreader.woff2")
+    assert status == 200 and body[:4] == b"wOF2"
+    assert client.get("/static/fonts/../index.html")[0] == 404
+    assert client.get("/static/fonts/missing.woff2")[0] == 404
 
 
 def test_rejects_foreign_host_and_origin(client):

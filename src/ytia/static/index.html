@@ -3,202 +3,301 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ytia</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f6e66'/%3E%3Cpath d='M11 9l10 7-10 7z' fill='white'/%3E%3C/svg%3E">
+<title>The Archive Record — ytia</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2317191F'/%3E%3Cpath d='M11 9l10 7-10 7z' fill='%23E9E8E2'/%3E%3C/svg%3E">
 <style>
+  /* Fonts ship with ytia (SIL Open Font License, see /static/fonts/OFL-*.txt), so the page works offline. */
+  @font-face { font-family: "Newsreader"; src: url("/static/fonts/newsreader.woff2") format("woff2");
+    font-weight: 200 800; font-style: normal; font-display: swap; }
+  @font-face { font-family: "Newsreader"; src: url("/static/fonts/newsreader-italic.woff2") format("woff2");
+    font-weight: 200 800; font-style: italic; font-display: swap; }
+  @font-face { font-family: "Libre Franklin"; src: url("/static/fonts/libre-franklin.woff2") format("woff2");
+    font-weight: 100 900; font-style: normal; font-display: swap; }
+  @font-face { font-family: "UnifrakturMaguntia"; src: url("/static/fonts/unifraktur-maguntia.woff2") format("woff2");
+    font-weight: 400; font-style: normal; font-display: swap; }
+
   :root {
-    --bg: #f5f4f0; --card: #ffffff; --text: #1d1c1a; --muted: #6c6962; --line: #e5e2da;
-    --accent: #0f6e66; --accent-ink: #ffffff; --accent-soft: #e2f0ee;
-    --ok: #2f8a4c; --warn: #b26b00; --bad: #c2410c; --busy: #2563eb; --idle: #8a877f;
-    --shadow: 0 1px 2px rgba(0,0,0,.04), 0 2px 8px rgba(0,0,0,.04);
+    --paper: #E9E8E2;
+    --paper-inset: #DEDCD3;
+    --ink: #17191F;
+    --ink-soft: #4B4D53;
+    --hair: rgba(23, 25, 31, .26);
+    --spot: #1D4E9E;
+    --ok: #2E6B3A;
+    --warn: #8A5A00;
+    --bad: #A3271B;
+    --serif: "Newsreader", "Iowan Old Style", Georgia, serif;
+    --grotesk: "Libre Franklin", "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
+    --blackletter: "UnifrakturMaguntia", "Old English Text MT", serif;
     color-scheme: light;
   }
+  /* Dark mode reads like a microfilm negative. */
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #141513; --card: #1d1e1c; --text: #ecebe6; --muted: #9d9a91; --line: #2f302c;
-      --accent: #43b8aa; --accent-ink: #0a1513; --accent-soft: #1b3330;
-      --ok: #5cc27c; --warn: #e3a33b; --bad: #f07a4a; --busy: #6c9cff; --idle: #77746c;
-      --shadow: none;
+      --paper: #1A1B1A;
+      --paper-inset: #242523;
+      --ink: #E4E2DA;
+      --ink-soft: #A4A29A;
+      --hair: rgba(228, 226, 218, .22);
+      --spot: #8DB0EC;
+      --ok: #7CC48C;
+      --warn: #E0B25A;
+      --bad: #F0806F;
       color-scheme: dark;
     }
   }
-  * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--text);
-    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-  a { color: var(--accent); }
-  .wrap { max-width: 980px; margin: 0 auto; padding: 24px 16px 48px; }
-  .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 13px; }
-  .muted { color: var(--muted); }
 
-  .top { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
-  .brand { display: flex; align-items: center; gap: 12px; }
-  .brand svg { width: 40px; height: 40px; flex: none; }
-  .brand h1 { font-size: 20px; margin: 0; letter-spacing: -.01em; }
-  .brand p { margin: 0; font-size: 13px; color: var(--muted); }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--serif);
+    font-size: 18px; line-height: 1.55; font-optical-sizing: auto; }
+  a { color: var(--spot); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:hover { text-decoration-thickness: 2px; }
+  :focus-visible { outline: 2px solid var(--spot); outline-offset: 2px; }
+  [hidden] { display: none !important; }
+  h1, h2, h3 { margin: 0; font-weight: 600; }
+  p { margin: 0; }
+  .page { max-width: 1180px; margin: 0 auto; padding: 20px 24px 40px; }
+  .figures { font-family: var(--grotesk); font-variant-numeric: tabular-nums lining-nums; }
+  .soft { color: var(--ink-soft); }
+
+  /* Masthead */
+  .masthead { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 16px; padding-bottom: 10px; }
+  .nameplate { font-family: var(--blackletter); font-weight: 400; font-size: clamp(44px, 7.4vw, 92px);
+    line-height: .95; text-align: center; letter-spacing: .005em; white-space: nowrap; }
+  .ear { font-family: var(--grotesk); font-size: 13px; line-height: 1.35; border: 1px solid var(--ink);
+    padding: 8px 10px; max-width: 190px; }
+  .ear-right { justify-self: end; text-align: right; }
+  .ear em { font-family: var(--serif); font-size: 14px; color: var(--ink-soft); display: block; }
+  .ear strong { font-size: 16px; font-weight: 700; display: block; font-variant-numeric: tabular-nums; }
+  .ear .live::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--ok); margin-right: 6px; vertical-align: 1px; animation: blink 1.6s steps(2, start) infinite; }
+  @keyframes blink { to { visibility: hidden; } }
+
+  .dateline { display: flex; align-items: center; gap: 12px 24px; flex-wrap: wrap; justify-content: space-between;
+    border-top: 3px solid var(--ink); border-bottom: 1px solid var(--ink); padding: 7px 0;
+    font-family: var(--grotesk); font-size: 13px; }
+  .dateline .tagline { font-family: var(--serif); font-style: italic; font-size: 15px; }
   .controls { display: flex; gap: 8px; flex-wrap: wrap; }
 
-  .btn { font: inherit; font-weight: 600; font-size: 14px; border-radius: 9px; padding: 8px 16px; cursor: pointer;
-    border: 1px solid var(--line); background: var(--card); color: var(--text); }
-  .btn:hover:not(:disabled) { border-color: var(--muted); }
-  .btn:disabled { opacity: .55; cursor: default; }
-  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
-  .btn.primary:hover:not(:disabled) { filter: brightness(1.08); }
-  .btn.small { padding: 4px 10px; font-size: 13px; }
-  .btn.danger { color: var(--bad); }
+  /* Buttons and inputs */
+  .btn { font-family: var(--grotesk); font-weight: 600; font-size: 14px; line-height: 1.2; padding: 7px 14px;
+    border: 1.5px solid var(--ink); background: transparent; color: var(--ink); border-radius: 0; cursor: pointer; }
+  .btn:hover:not(:disabled) { background: var(--paper-inset); }
+  .btn:disabled { opacity: .45; cursor: default; }
+  .btn.solid { background: var(--ink); color: var(--paper); }
+  .btn.solid:hover:not(:disabled) { background: var(--ink); opacity: .86; }
+  .btn.quiet { border-color: var(--hair); font-weight: 500; padding: 5px 10px; font-size: 13px; }
+  .btn.quiet:hover:not(:disabled) { border-color: var(--ink); background: transparent; }
+  input, select { font-family: var(--grotesk); font-size: 15px; color: var(--ink); background: transparent;
+    border: 0; border-bottom: 1.5px solid var(--ink); border-radius: 0; padding: 7px 2px; min-width: 0; }
+  select { border: 1.5px solid var(--ink); padding: 6px 8px; background: var(--paper); }
+  input::placeholder { color: var(--ink-soft); opacity: .8; }
 
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; margin-bottom: 16px; box-shadow: var(--shadow); }
-  .card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
-  h2 { font-size: 16px; margin: 0; }
+  /* Notice to readers */
+  .notice { margin-top: 18px; border: 1.5px solid var(--ink); padding: 12px 16px; display: flex; gap: 8px 16px;
+    align-items: baseline; flex-wrap: wrap; background: var(--paper-inset); }
+  .notice h2 { font-size: 18px; font-style: italic; }
+  .notice p { flex: 1 1 320px; font-size: 16px; }
 
-  .banner { border: 1px solid var(--warn); background: color-mix(in srgb, var(--warn) 10%, var(--card));
-    border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; }
-  .banner b { color: var(--warn); }
-  .banner button { margin-left: 8px; }
+  /* Front page */
+  .front { display: grid; grid-template-columns: minmax(0, 2.1fr) minmax(260px, 1fr); gap: 0; margin-top: 22px; }
+  .lead { padding-right: 32px; }
+  .headline { font-size: clamp(32px, 4.4vw, 58px); line-height: 1.04; letter-spacing: -.015em; font-weight: 650;
+    text-wrap: balance; overflow-wrap: anywhere; }
+  .deck { font-style: italic; font-weight: 400; font-size: clamp(19px, 1.9vw, 23px); line-height: 1.35;
+    color: var(--ink-soft); margin-top: 12px; max-width: 46ch; text-wrap: pretty; }
+  .press { margin-top: 20px; }
+  .press-rule { height: 9px; background: var(--hair); position: relative; }
+  .press-rule > div { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--spot); transition: width .8s ease; }
+  .press figcaption { display: flex; justify-content: space-between; gap: 4px 16px; flex-wrap: wrap;
+    font-family: var(--grotesk); font-size: 13px; margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .story { margin-top: 22px; max-width: 64ch; font-size: 18px; line-height: 1.6; hyphens: auto; text-wrap: pretty; }
+  .story::first-letter { float: left; font-size: 3.55em; line-height: .82; font-weight: 700; padding: 6px 8px 0 0; }
 
-  .hero-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
-  .big { font-size: 30px; font-weight: 700; letter-spacing: -.02em; line-height: 1.1; }
-  .bar { height: 10px; border-radius: 99px; background: var(--line); overflow: hidden; margin: 16px 0 12px; }
-  .bar > div { height: 100%; width: 0; background: var(--accent); border-radius: 99px; transition: width .6s ease; }
-  .chips { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--muted); }
-  .chips span b { color: var(--text); }
-  .transfer { margin-top: 12px; padding: 12px 14px; border-radius: 10px; background: var(--accent-soft); }
-  .transfer-head { display: flex; gap: 8px; flex-wrap: wrap; font-size: 14px; }
-  .transfer-head span { overflow-wrap: anywhere; }
-  .bar.thin { height: 6px; margin: 10px 0 8px; background: color-mix(in srgb, var(--accent) 18%, transparent); }
-  .transfer-meta { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 13px; font-variant-numeric: tabular-nums; }
-  .speeds[hidden], .activity[hidden] { display: none; }
-  .speeds { display: flex; flex-wrap: wrap; gap: 4px 18px; margin-top: 10px; font-size: 13px; font-variant-numeric: tabular-nums; }
-  .activity { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 14px; display: flex; gap: 8px; align-items: center; min-height: 22px; }
+  .sidebar { border-left: 1px solid var(--ink); padding-left: 24px; display: grid; gap: 26px; align-content: start; }
+  .sidebar h3, .section-head h2 { font-size: 21px; font-weight: 650; border-bottom: 1px solid var(--ink); padding-bottom: 4px; margin-bottom: 8px; }
+  .tally { list-style: none; margin: 0; padding: 0; font-family: var(--grotesk); font-size: 15px; font-variant-numeric: tabular-nums; }
+  .tally li { display: flex; align-items: baseline; gap: 6px; padding: 3px 0; }
+  .tally li::after { content: ""; order: 1; flex: 1; border-bottom: 1.5px dotted var(--ink-soft); transform: translateY(-4px); }
+  .tally .n { order: 2; font-weight: 700; }
+  .tally .total { border-top: 1px solid var(--ink); margin-top: 4px; padding-top: 6px; font-weight: 700; }
+  .tally .problem { color: var(--bad); }
+  .speeds p { font-size: 16px; line-height: 1.45; }
+  .speeds p + p { margin-top: 8px; }
+  .speeds b { font-family: var(--grotesk); font-weight: 700; font-variant-numeric: tabular-nums; }
+  .speeds small { display: block; font-family: var(--grotesk); font-size: 12px; color: var(--ink-soft); }
 
-  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: var(--idle); flex: none; }
-  .pill { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; padding: 4px 12px; border-radius: 99px; border: 1px solid var(--line); }
-  .pill.working .dot { background: var(--ok); animation: pulse 1.4s ease-in-out infinite; }
-  .pill.paused .dot { background: var(--warn); }
-  @keyframes pulse { 50% { opacity: .35; } }
-  @media (prefers-reduced-motion: reduce) { .pill.working .dot { animation: none; } .bar > div { transition: none; } }
+  /* Channels */
+  .channels-section { margin-top: 36px; border-top: 3px solid var(--ink); padding-top: 10px; }
+  .section-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .section-head h2 { border: 0; margin: 0; font-size: 26px; }
+  .listings { list-style: none; margin: 8px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); column-gap: 32px; }
+  .listings li { padding: 10px 0; border-bottom: 1px solid var(--hair); display: flex; gap: 12px; align-items: start; justify-content: space-between; }
+  .listings .btn { white-space: nowrap; flex: none; }
+  .listings .name { font-size: 20px; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+  .listings .name a { color: var(--ink); }
+  .listings .meta { font-family: var(--grotesk); font-size: 13px; color: var(--ink-soft); margin-top: 2px; }
+  .listings .empty { font-style: italic; color: var(--ink-soft); border: 0; }
+  .add-form { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; margin-top: 16px; }
+  .add-form label { display: grid; gap: 2px; font-family: var(--grotesk); font-size: 12px; color: var(--ink-soft); }
+  .add-form .url { flex: 3 1 300px; } .add-form .prefix { flex: 1 1 160px; }
+  .hint { font-size: 15px; font-style: italic; color: var(--ink-soft); margin-top: 8px; max-width: 80ch; }
 
-  .s-pending { --c: var(--idle); } .s-downloading, .s-uploading { --c: var(--busy); }
-  .s-downloaded, .s-uploaded { --c: var(--accent); } .s-done { --c: var(--ok); }
-  .s-failed { --c: var(--warn); } .s-skipped { --c: var(--bad); }
-  .chips .dot, .badge .dot { background: var(--c); }
-  .badge { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; white-space: nowrap; }
+  /* Section index */
+  .sections { margin-top: 40px; border-top: 3px solid var(--ink); }
+  .section-index { display: flex; flex-wrap: wrap; border-bottom: 1px solid var(--ink); }
+  .section-index button { font-family: var(--serif); font-size: 19px; font-weight: 500; color: var(--ink-soft);
+    background: none; border: 0; border-right: 1px solid var(--hair); padding: 8px 20px 8px 0; margin-right: 20px; cursor: pointer; }
+  .section-index button:last-child { border-right: 0; }
+  .section-index button[aria-selected="true"] { color: var(--ink); font-weight: 700; font-style: italic; }
+  .panel { padding-top: 16px; }
 
-  .channels { list-style: none; padding: 0; margin: 0 0 16px; }
-  .channels li { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
-  .channels li:first-child { border-top: 1px solid var(--line); }
-  .channels .name { font-weight: 600; flex: 1 1 200px; min-width: 0; overflow-wrap: anywhere; }
-  .channels .meta { font-size: 13px; color: var(--muted); }
-  .empty { color: var(--muted); padding: 8px 0 16px; }
-
-  form.row { display: flex; gap: 8px; flex-wrap: wrap; }
-  input, select { font: inherit; font-size: 14px; padding: 8px 10px; border-radius: 9px; border: 1px solid var(--line);
-    background: var(--bg); color: var(--text); min-width: 0; }
-  input:focus, select:focus, .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-  #add-url { flex: 3 1 260px; } #add-prefix { flex: 1 1 140px; }
-  .hint { font-size: 13px; color: var(--muted); margin: 8px 0 0; }
-
-  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin: -4px 0 16px; overflow-x: auto; }
-  .tabs button { font: inherit; font-size: 14px; font-weight: 600; background: none; border: 0; color: var(--muted);
-    padding: 8px 12px; border-bottom: 2px solid transparent; cursor: pointer; white-space: nowrap; }
-  .tabs button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); }
-  [data-panel][hidden] { display: none; }
-
-  .toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+  .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; font-family: var(--grotesk); font-size: 14px; }
   .table-wrap { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); font-weight: 600; padding: 6px 8px; border-bottom: 1px solid var(--line); }
-  td { padding: 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
-  td.title { min-width: 220px; overflow-wrap: anywhere; }
-  td.detail { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; max-width: 340px; }
-  td.detail.err { color: var(--bad); }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-family: var(--grotesk); font-size: 13px; font-weight: 700; padding: 6px 10px 6px 0; border-bottom: 1.5px solid var(--ink); white-space: nowrap; }
+  td { padding: 9px 10px 9px 0; border-bottom: 1px solid var(--hair); vertical-align: top; }
+  td.title { font-size: 17px; line-height: 1.35; min-width: 240px; overflow-wrap: anywhere; }
+  td.title small { display: block; font-family: var(--grotesk); font-size: 12px; margin-top: 2px; }
+  td.status { font-style: italic; font-size: 16px; white-space: nowrap; }
+  td.status.done { color: var(--ok); }
+  td.status.problem { color: var(--bad); }
+  td.status.busy { color: var(--spot); }
+  td.num { font-family: var(--grotesk); font-size: 14px; font-variant-numeric: tabular-nums; text-align: right; padding-right: 18px; }
+  td.detail { font-family: var(--grotesk); font-size: 13px; overflow-wrap: anywhere; max-width: 360px; }
+  td.detail.problem { color: var(--bad); }
+  .empty-note { font-style: italic; color: var(--ink-soft); padding: 12px 0; }
 
-  .events { list-style: none; margin: 0; padding: 0; max-height: 460px; overflow-y: auto; font-size: 14px; }
-  .events li { display: grid; grid-template-columns: 130px 1fr; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--line); }
-  .events time { color: var(--muted); font-size: 13px; }
-  .events .msg { white-space: pre-wrap; overflow-wrap: anywhere; }
-  .events .warning .msg { color: var(--warn); } .events .error .msg { color: var(--bad); } .events .success .msg { color: var(--ok); }
-  @media (max-width: 560px) { .events li { grid-template-columns: 1fr; gap: 0; } }
+  .dispatches { list-style: none; margin: 0; padding: 0; max-height: 520px; overflow-y: auto; columns: 2 380px; column-gap: 32px; column-rule: 1px solid var(--hair); }
+  .dispatches li { break-inside: avoid; padding: 8px 0; border-bottom: 1px solid var(--hair); font-size: 16px; line-height: 1.45; }
+  .dispatches time { font-family: var(--grotesk); font-weight: 700; font-size: 12px; margin-right: 8px; font-variant-numeric: tabular-nums; }
+  .dispatches .msg { white-space: pre-wrap; overflow-wrap: anywhere; }
+  .dispatches .warning .msg { color: var(--warn); }
+  .dispatches .error .msg { color: var(--bad); }
+  .dispatches .success .msg { color: var(--ok); }
 
-  .settings { display: grid; gap: 14px; }
-  .setting { display: grid; grid-template-columns: 1fr 260px; gap: 4px 16px; align-items: center; }
-  .setting label { font-weight: 600; font-size: 14px; }
-  .setting p { margin: 0; font-size: 13px; color: var(--muted); grid-column: 1; }
+  .settings { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); column-gap: 32px; }
+  .setting { display: grid; grid-template-columns: 1fr 180px; gap: 2px 16px; align-items: start; padding: 12px 0; border-bottom: 1px solid var(--hair); }
+  .setting label { font-weight: 600; font-size: 17px; }
+  .setting p { grid-column: 1; font-size: 15px; color: var(--ink-soft); line-height: 1.4; }
   .setting .input { grid-column: 2; grid-row: 1 / span 2; }
   .setting .input > * { width: 100%; }
-  @media (max-width: 640px) { .setting { grid-template-columns: 1fr; } .setting .input { grid-column: 1; grid-row: auto; } }
 
-  .checks { list-style: none; padding: 0; margin: 0 0 20px; }
-  .checks li { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
-  .checks .mark { font-weight: 700; width: 18px; flex: none; }
+  .setup { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 32px; }
+  .checks { list-style: none; margin: 0; padding: 0; }
+  .checks li { display: grid; grid-template-columns: 22px 1fr; padding: 8px 0; border-bottom: 1px solid var(--hair); font-size: 16px; }
+  .checks .mark { font-family: var(--grotesk); font-weight: 800; }
   .checks .ok .mark { color: var(--ok); } .checks .bad .mark { color: var(--bad); }
-  .checks .fix { font-size: 13px; color: var(--muted); }
-  .login { border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
-  .login h3 { margin: 0 0 4px; font-size: 15px; }
-  .login form { margin-top: 12px; }
-  .login input { flex: 1 1 200px; }
+  .checks .detail { font-family: var(--grotesk); font-size: 13px; color: var(--ink-soft); overflow-wrap: anywhere; }
+  .checks .fix { font-style: italic; font-size: 15px; }
+  .login { border: 1.5px solid var(--ink); padding: 16px; align-self: start; }
+  .login h3 { font-size: 21px; }
+  .login p { font-size: 15px; color: var(--ink-soft); margin-top: 4px; }
+  .login form { display: grid; gap: 12px; margin-top: 12px; }
 
-  footer { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 13px; color: var(--muted); padding-top: 8px; }
+  .colophon { margin-top: 44px; border-top: 1px solid var(--ink); padding-top: 10px; display: flex; justify-content: space-between;
+    gap: 12px 24px; flex-wrap: wrap; align-items: baseline; font-size: 14px; font-style: italic; color: var(--ink-soft); }
+  .colophon p { max-width: 80ch; overflow-wrap: anywhere; }
 
-  #toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); max-width: min(560px, calc(100vw - 32px));
-    background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: 14px; opacity: 0;
-    pointer-events: none; transition: opacity .2s; white-space: pre-wrap; z-index: 10; }
-  #toast.show { opacity: 1; } #toast.error { background: var(--bad); color: #fff; }
-  .closed { text-align: center; padding: 80px 16px; }
+  #toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); width: max-content; max-width: min(540px, calc(100vw - 32px));
+    background: var(--paper); color: var(--ink); border: 1.5px solid var(--ink); border-top-width: 4px; padding: 10px 14px;
+    font-family: var(--grotesk); font-size: 14px; white-space: pre-wrap; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 10; }
+  #toast.show { opacity: 1; }
+  #toast.error { border-color: var(--bad); color: var(--bad); }
+  .closed { text-align: center; padding: 18vh 16px; }
+  .closed h1 { font-family: var(--blackletter); font-weight: 400; font-size: 56px; }
+  .closed p { font-style: italic; margin-top: 12px; }
+
+  @media (max-width: 860px) {
+    .front { grid-template-columns: 1fr; }
+    .lead { padding-right: 0; }
+    .sidebar { border-left: 0; border-top: 1px solid var(--ink); padding: 18px 0 0; margin-top: 24px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; }
+    .setup { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 640px) {
+    .page { padding: 14px 16px 32px; }
+    .masthead { grid-template-columns: 1fr 1fr; }
+    .nameplate { grid-column: 1 / -1; grid-row: 1; white-space: normal; }
+    .ear { max-width: none; }
+    .setting { grid-template-columns: 1fr; }
+    .setting .input { grid-column: 1; grid-row: auto; margin-top: 6px; }
+    .settings { grid-template-columns: 1fr; }
+    .section-index button { font-size: 17px; padding-right: 12px; margin-right: 12px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .press-rule > div { transition: none; }
+    .ear .live::before { animation: none; }
+  }
 </style>
 </head>
 <body>
-<div class="wrap" id="app">
-  <header class="top">
-    <div class="brand">
-      <svg viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="10" fill="var(--accent)"/><path d="M14 11l13 9-13 9z" fill="var(--accent-ink)"/></svg>
-      <div><h1>ytia</h1><p>YouTube channel → Internet Archive</p></div>
-    </div>
-    <div class="controls" id="controls"></div>
+<div class="page" id="app">
+  <header class="masthead">
+    <div class="ear" aria-live="polite"><em>The worker</em><strong id="ear-worker">Stopped</strong></div>
+    <h1 class="nameplate">The Archive Record</h1>
+    <div class="ear ear-right"><em>In the Internet Archive</em><strong id="ear-count">–</strong></div>
   </header>
+  <div class="dateline">
+    <span id="today"></span>
+    <span class="tagline">A YouTube channel, copied to the Internet Archive one video at a time</span>
+    <div class="controls" id="controls"></div>
+  </div>
 
-  <div class="banner" id="banner" hidden></div>
+  <aside class="notice" id="notice" hidden>
+    <h2>Setup is not complete.</h2>
+    <p id="notice-text"></p>
+    <button class="btn quiet" id="notice-open">Open setup</button>
+  </aside>
 
-  <section class="card">
-    <div class="hero-top">
-      <div><div class="big" id="done-text">–</div><div class="muted" id="done-sub">videos archived</div></div>
-      <span class="pill" id="pill"><span class="dot"></span><span id="pill-text">Stopped</span></span>
-    </div>
-    <div class="bar" role="progressbar" aria-label="Archive progress" id="bar"><div id="bar-fill"></div></div>
-    <div class="chips" id="chips"></div>
-    <div class="activity"><span class="muted">Now:</span> <span id="activity">Idle</span></div>
-    <div class="transfer" id="transfer" hidden>
-      <div class="transfer-head"><b id="tr-phase"></b><span class="muted" id="tr-title"></span></div>
-      <div class="bar thin"><div id="tr-fill"></div></div>
-      <div class="transfer-meta"><span id="tr-amount"></span><span id="tr-speed"></span><b id="tr-eta"></b></div>
-    </div>
-    <div class="speeds" id="speeds" hidden></div>
-  </section>
+  <main class="front">
+    <article class="lead" aria-live="polite">
+      <h2 class="headline" id="headline">Loading the latest edition</h2>
+      <p class="deck" id="deck"></p>
+      <figure class="press" style="margin-left:0;margin-right:0">
+        <div class="press-rule" id="press-rule" role="progressbar" aria-valuemin="0" aria-valuemax="100"><div id="press-fill"></div></div>
+        <figcaption><span id="press-left"></span><span id="press-right"></span></figcaption>
+      </figure>
+      <p class="story" id="story"></p>
+    </article>
 
-  <section class="card">
-    <div class="card-head">
+    <aside class="sidebar">
+      <section>
+        <h3>The queue</h3>
+        <ul class="tally" id="tally"></ul>
+      </section>
+      <section class="speeds">
+        <h3>Line speed</h3>
+        <div id="speeds"><p class="soft"><i>No transfer yet. The speeds show here after the first download and upload.</i></p></div>
+      </section>
+    </aside>
+  </main>
+
+  <section class="channels-section">
+    <div class="section-head">
       <h2>Channels</h2>
-      <button class="btn small" id="sync-all" hidden>Check all channels</button>
+      <button class="btn quiet" id="sync-all" hidden>Check all channels for new videos</button>
     </div>
-    <ul class="channels" id="channels"></ul>
-    <form class="row" id="add-form">
-      <input id="add-url" placeholder="https://www.youtube.com/@yourchannel" aria-label="Channel URL" required>
-      <input id="add-prefix" placeholder="Item prefix (optional)" aria-label="Item prefix">
-      <button class="btn primary" id="add-btn">Add channel</button>
+    <ul class="listings" id="channels"></ul>
+    <form class="add-form" id="add-form">
+      <label class="url">Channel URL<input id="add-url" placeholder="https://www.youtube.com/@yourchannel" required></label>
+      <label class="prefix">Item prefix (optional)<input id="add-prefix" placeholder="yourchannel"></label>
+      <button class="btn solid" id="add-btn">Add channel</button>
     </form>
-    <p class="hint">Each video becomes archive.org/details/<b>prefix</b>-videoID. Choose the prefix carefully: you cannot change it after the first upload.</p>
+    <p class="hint">Each video becomes archive.org/details/prefix-videoID. You cannot change the prefix after the first upload.</p>
   </section>
 
-  <section class="card">
-    <nav class="tabs" role="tablist">
+  <section class="sections">
+    <nav class="section-index" role="tablist" aria-label="Sections">
       <button role="tab" data-tab="queue" aria-selected="true">Videos</button>
-      <button role="tab" data-tab="activity" aria-selected="false">Activity</button>
+      <button role="tab" data-tab="activity" aria-selected="false">Dispatches</button>
       <button role="tab" data-tab="settings" aria-selected="false">Settings</button>
       <button role="tab" data-tab="setup" aria-selected="false">Setup</button>
     </nav>
 
-    <div data-panel="queue">
+    <div class="panel" data-panel="queue">
       <div class="toolbar">
-        <select id="filter" aria-label="Filter by status">
+        <select id="filter" aria-label="Show videos with this status">
           <option value="">All videos</option>
           <option value="pending">Waiting</option>
           <option value="downloading">Downloading</option>
@@ -209,45 +308,47 @@
           <option value="failed">Will retry</option>
           <option value="skipped">Skipped</option>
         </select>
-        <button class="btn small" id="retry-failed">Retry failed now</button>
-        <button class="btn small" id="retry-skipped">Retry skipped</button>
+        <button class="btn quiet" id="retry-failed">Retry failed videos now</button>
+        <button class="btn quiet" id="retry-skipped">Retry skipped videos</button>
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Video</th><th>Status</th><th>Tries</th><th>Archive item / problem</th></tr></thead>
+          <thead><tr><th>Video</th><th>Status</th><th style="text-align:right;padding-right:18px">Tries</th><th>Archive item or problem</th></tr></thead>
           <tbody id="videos"></tbody>
         </table>
       </div>
-      <p class="empty" id="videos-empty" hidden>No videos here.</p>
+      <p class="empty-note" id="videos-empty" hidden>No videos have this status.</p>
     </div>
 
-    <div data-panel="activity" hidden>
-      <ol class="events" id="events"></ol>
-      <p class="empty" id="events-empty">Nothing happened yet.</p>
+    <div class="panel" data-panel="activity" hidden>
+      <ol class="dispatches" id="events"></ol>
+      <p class="empty-note" id="events-empty">No dispatches yet. Events show here when the worker runs.</p>
     </div>
 
-    <div data-panel="settings" hidden>
+    <div class="panel" data-panel="settings" hidden>
       <div class="settings" id="settings"></div>
     </div>
 
-    <div data-panel="setup" hidden>
-      <ul class="checks" id="checks"></ul>
-      <div class="login">
-        <h3>Internet Archive account</h3>
-        <p class="muted" style="margin:0;font-size:13px">Your password goes only to archive.org. ytia stores the upload keys that archive.org returns, not the password.</p>
-        <form class="row" id="login-form">
-          <input id="login-email" type="email" placeholder="E-mail" autocomplete="username" required>
-          <input id="login-password" type="password" placeholder="Password" autocomplete="current-password" required>
-          <button class="btn primary">Log in</button>
-        </form>
+    <div class="panel" data-panel="setup" hidden>
+      <div class="setup">
+        <ul class="checks" id="checks"></ul>
+        <div class="login">
+          <h3>Internet Archive account</h3>
+          <p>Your password goes only to archive.org. ytia keeps the upload keys that archive.org sends back, not the password.</p>
+          <form id="login-form">
+            <input id="login-email" type="email" placeholder="E-mail" autocomplete="username" aria-label="E-mail" required>
+            <input id="login-password" type="password" placeholder="Password" autocomplete="current-password" aria-label="Password" required>
+            <button class="btn solid">Log in</button>
+          </form>
+          <p>If YouTube asks you to confirm that you are not a bot, open Settings and choose Firefox in “YouTube cookies from browser”. Log in to YouTube in Firefox first.</p>
+        </div>
       </div>
-      <p class="hint">If YouTube asks you to "confirm you're not a bot", go to Settings and choose your browser in <b>YouTube cookies from browser</b>. Log in to YouTube in that browser first.</p>
     </div>
   </section>
 
-  <footer>
-    <span id="footer-info"></span>
-    <button class="btn small danger" id="quit">Close ytia</button>
+  <footer class="colophon">
+    <p id="colophon"></p>
+    <button class="btn quiet" id="quit">Close ytia</button>
   </footer>
 </div>
 <div id="toast" role="status" aria-live="polite"></div>
@@ -259,6 +360,7 @@ const STATUS = {
   pending: "Waiting", downloading: "Downloading", downloaded: "Downloaded", uploading: "Uploading",
   uploaded: "Confirming", done: "Archived", failed: "Will retry", skipped: "Skipped",
 };
+const STATUS_CLASS = { done: "done", failed: "problem", skipped: "problem", downloading: "busy", uploading: "busy" };
 const SETTING_LABELS = {
   format: "Video format (yt-dlp)", merge_format: "Video container", subtitles: "Subtitles",
   cookies_file: "YouTube cookies file", cookies_from_browser: "YouTube cookies from browser",
@@ -315,8 +417,10 @@ async function act(button, fn, busyText) {
   finally { button.disabled = false; button.textContent = label; refresh(); }
 }
 
-const fmtTime = (ts) => ts ? new Date(ts * 1000).toLocaleString([], { dateStyle: "short", timeStyle: "short" }) : "never";
+const fmtTime = (ts) => ts ? new Date(ts * 1000).toLocaleString([], { dateStyle: "medium", timeStyle: "short" }) : "never";
+const fmtClock = (ts) => new Date(ts * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 const nf = new Intl.NumberFormat();
+const plural = (n, one, many) => `${nf.format(n)} ${n === 1 ? one : many}`;
 
 function fmtSize(bytes) {
   if (!bytes) return "?";
@@ -326,67 +430,114 @@ function fmtSize(bytes) {
   return `${bytes.toFixed(i < 2 ? 0 : 1)} ${units[i]}`;
 }
 // Internet plans are sold in Mbit/s, so show that next to the file speed.
-const fmtSpeed = (bps) => bps ? `${fmtSize(bps)}/s (${(bps * 8 / 1e6).toFixed(1)} Mbit/s)` : "measuring…";
+const fmtSpeed = (bps) => bps ? `${fmtSize(bps)}/s (${(bps * 8 / 1e6).toFixed(1)} Mbit/s)` : "still measuring";
 function fmtEta(seconds) {
-  if (seconds == null) return "time left unknown";
-  if (seconds < 60) return "less than 1 min left";
+  if (seconds == null) return "Time left unknown";
+  if (seconds < 60) return "Less than 1 min left";
   const minutes = Math.round(seconds / 60);
-  if (minutes < 60) return `about ${minutes} min left`;
-  return `about ${Math.floor(minutes / 60)} h ${minutes % 60} min left`;
+  if (minutes < 60) return `About ${minutes} min left`;
+  return `About ${Math.floor(minutes / 60)} h ${minutes % 60} min left`;
+}
+function listSentence(parts) {
+  if (parts.length < 2) return parts.join("");
+  return `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
 }
 
-function renderTransfer(t, speeds) {
-  const box = $("#transfer");
-  box.hidden = !t;
-  if (t) {
-    $("#tr-phase").textContent = t.phase === "download" ? "Downloading from YouTube" : "Uploading to the Internet Archive";
-    $("#tr-title").textContent = t.title;
-    $("#tr-fill").style.width = t.total ? `${Math.min(100, t.done * 100 / t.total)}%` : "0";
-    $("#tr-amount").textContent = t.total ? `${fmtSize(t.done)} of ${fmtSize(t.total)} (${Math.floor(t.done * 100 / t.total)}%)` : fmtSize(t.done);
-    $("#tr-speed").textContent = fmtSpeed(t.speed);
-    $("#tr-eta").textContent = t.total ? fmtEta(t.eta) : "";
-  }
-  const parts = [];
-  for (const [key, label] of [["download", "Download"], ["upload", "Upload"]]) {
-    if (speeds[key]) parts.push(el("span", { title: `Measured ${fmtTime(speeds[key].at)}` }, `${label} speed `, el("b", {}, fmtSpeed(speeds[key].bps))));
-  }
-  $("#speeds").hidden = parts.length === 0;
-  $("#speeds").replaceChildren(el("span", { class: "muted" }, "Last measured:"), ...parts);
-}
+$("#today").textContent = new Date().toLocaleDateString([], { weekday: "long", year: "numeric", month: "long", day: "numeric" });
 
-// State
+// The front page
 
 let state = null;
 let lastControls = "";
 let lastChannels = "";
 
+function frontPage(s) {
+  const c = s.counts, done = c.done, total = s.total;
+  const t = s.transfer;
+  if (t) {
+    const sent = t.phase === "download" ? "downloaded" : "sent";
+    return {
+      headline: t.phase === "download" ? `Downloading “${t.title}” from YouTube` : `Uploading “${t.title}” to the Internet Archive`,
+      deck: t.total
+        ? `${fmtSize(t.done)} of ${fmtSize(t.total)} ${sent} at ${fmtSpeed(t.speed)}. ${fmtEta(t.eta)}.`
+        : `${fmtSize(t.done)} ${sent} at ${fmtSpeed(t.speed)}.`,
+      percent: t.total ? Math.min(100, t.done * 100 / t.total) : 0,
+      left: t.phase === "download" ? "This download" : "This upload",
+      right: t.total ? `${Math.floor(t.done * 100 / t.total)}%` : "",
+    };
+  }
+  const archive = {
+    percent: total ? done * 100 / total : 0,
+    left: "The whole archive",
+    right: total ? `${Math.floor(done * 100 / total)}%` : "",
+  };
+  if (!total) return { ...archive, headline: "Add a YouTube channel to start the archive",
+    deck: "Paste the channel URL under Channels. ytia reads the list of videos, then copies them one at a time." };
+  if (done === total) return { ...archive, headline: `All ${plural(total, "video is", "videos are")} in the Internet Archive`,
+    deck: "Check the channels for new videos after the next upload on YouTube." };
+  if (s.worker.running && s.paused) return { ...archive, headline: "The archive is paused",
+    deck: "The current step is complete. Resume to continue with the next video." };
+  if (s.worker.running) return { ...archive, headline: s.activity, deck: "The next transfer starts soon." };
+  return { ...archive, headline: s.paused ? "The worker is stopped and the queue is paused" : "The worker is stopped",
+    deck: `Start it to continue. ${plural(c.pending + c.failed, "video waits", "videos wait")} in the queue.` };
+}
+
+function storyText(s) {
+  const c = s.counts, total = s.total;
+  if (!total) return "There are no videos in the queue yet. When you add a channel, every video, short and stream goes in the queue, oldest first.";
+  // Start with a word, not a figure, because the first letter becomes the drop cap.
+  const first = `The Internet Archive now holds ${nf.format(c.done)} of ${plural(total, "video", "videos")} from this queue.`;
+  const rest = [];
+  if (c.pending) rest.push(`${nf.format(c.pending)} ${c.pending === 1 ? "waits" : "wait"} in the queue`);
+  const busy = c.downloading + c.downloaded + c.uploading;
+  if (busy) rest.push(`${nf.format(busy)} ${busy === 1 ? "is" : "are"} in progress`);
+  if (c.uploaded) rest.push(`${nf.format(c.uploaded)} ${c.uploaded === 1 ? "waits" : "wait"} for the Internet Archive to confirm`);
+  if (c.failed) rest.push(`${nf.format(c.failed)} will be retried`);
+  if (c.skipped) rest.push(`${nf.format(c.skipped)} ${c.skipped === 1 ? "was" : "were"} skipped`);
+  const second = rest.length ? ` Of the others, ${listSentence(rest)}.` : "";
+  return `${first}${second} After each upload, ytia deletes the local copy and keeps only a record of the video, so a check for new videos never uploads it again.`;
+}
+
 function renderState(s) {
   state = s;
-  const done = s.counts.done, total = s.total;
-  $("#done-text").textContent = total ? `${nf.format(done)} of ${nf.format(total)}` : "No videos yet";
-  $("#done-sub").textContent = total ? `videos archived (${Math.floor(done * 100 / total)}%)` : "Add a channel to start";
-  $("#bar-fill").style.width = total ? `${done * 100 / total}%` : "0";
-  $("#bar").setAttribute("aria-valuenow", total ? Math.floor(done * 100 / total) : 0);
+  const page = frontPage(s);
+  $("#headline").textContent = page.headline;
+  $("#deck").textContent = page.deck;
+  $("#press-fill").style.width = `${page.percent}%`;
+  $("#press-rule").setAttribute("aria-valuenow", Math.floor(page.percent));
+  $("#press-rule").setAttribute("aria-label", page.left);
+  $("#press-left").textContent = page.left;
+  $("#press-right").textContent = page.right;
+  $("#story").textContent = storyText(s);
 
-  $("#chips").replaceChildren(...Object.entries(s.counts).filter(([, n]) => n).map(([status, n]) =>
-    el("span", { class: `s-${status}` }, el("span", { class: "dot" }), " ", STATUS[status], " ", el("b", { text: nf.format(n) }))));
+  const worker = $("#ear-worker");
+  worker.textContent = !s.worker.running ? "Stopped" : s.paused ? "Paused" : s.worker.in_ui ? "Working" : "Working in a terminal";
+  worker.className = s.worker.running && !s.paused ? "live" : "";
+  $("#ear-count").textContent = s.total ? `${nf.format(s.counts.done)} of ${nf.format(s.total)}` : "No videos yet";
+  $("#colophon").textContent = `Set in Newsreader and Libre Franklin. Printed on this computer from ${s.home}. ytia ${s.version}.`;
 
-  const pill = $("#pill");
-  const paused = s.paused;
-  pill.className = "pill" + (s.worker.running ? (paused ? " paused" : " working") : "");
-  $("#pill-text").textContent = !s.worker.running ? (paused ? "Stopped · paused" : "Stopped")
-    : paused ? "Paused" : s.worker.in_ui ? "Working" : "Working (in a terminal)";
-  $("#activity").textContent = s.worker.running ? s.activity : (paused ? "The queue is paused." : "The worker is not running.");
-  // The transfer panel shows the same data in more detail.
-  $(".activity").hidden = !!s.transfer;
-  $("#footer-info").textContent = `ytia ${s.version} · data folder: ${s.home}`;
+  const rows = [["done", "Archived"], ["pending", "Waiting"], ["downloading", "Downloading"], ["downloaded", "Downloaded"],
+    ["uploading", "Uploading"], ["uploaded", "Confirming"], ["failed", "Will retry"], ["skipped", "Skipped"]];
+  $("#tally").replaceChildren(
+    ...rows.filter(([key]) => key === "done" || key === "pending" || s.counts[key]).map(([key, label]) =>
+      el("li", { class: key === "failed" || key === "skipped" ? "problem" : null }, label, el("span", { class: "n" }, nf.format(s.counts[key])))),
+    el("li", { class: "total" }, "All videos", el("span", { class: "n" }, nf.format(s.total))));
 
-  renderTransfer(s.transfer, s.speeds);
+  renderSpeeds(s.speeds);
 
-  const sig = JSON.stringify([s.worker, paused, s.pause_now, s.total > 0, !!s.transfer]);
+  const sig = JSON.stringify([s.worker, s.paused, s.pause_now, s.total > 0, !!s.transfer]);
   if (sig !== lastControls) { lastControls = sig; renderControls(s); }
   const chSig = JSON.stringify(s.channels);
   if (chSig !== lastChannels) { lastChannels = chSig; renderChannels(s.channels); }
+}
+
+function renderSpeeds(speeds) {
+  const parts = [];
+  for (const [key, label] of [["download", "Download from YouTube"], ["upload", "Upload to the Internet Archive"]]) {
+    if (speeds[key]) parts.push(el("p", {}, `${label}: `, el("b", {}, fmtSpeed(speeds[key].bps)),
+      el("small", {}, `Measured ${fmtTime(speeds[key].at)}`)));
+  }
+  if (parts.length) $("#speeds").replaceChildren(...parts);
 }
 
 function renderControls(s) {
@@ -395,7 +546,7 @@ function renderControls(s) {
     buttons.push(el("button", { class: "btn", title: "The worker completes the current step, then stops.",
       onclick: (e) => act(e.target, () => api("/api/worker/stop", {}).then(() => toast("The worker stops after the current step."))) }, "Stop"));
   } else if (!s.worker.running) {
-    buttons.push(el("button", { class: "btn primary", disabled: !s.total,
+    buttons.push(el("button", { class: "btn solid", disabled: !s.total,
       onclick: (e) => act(e.target, async () => {
         if (s.paused) await api("/api/resume", {});
         await api("/api/worker/start", {});
@@ -403,48 +554,47 @@ function renderControls(s) {
       }) }, "Start"));
   }
   if (s.paused) {
-    if (s.worker.running) buttons.push(el("button", { class: "btn primary",
-      onclick: (e) => act(e.target, () => api("/api/resume", {})) }, "Resume"));
+    if (s.worker.running) buttons.push(el("button", { class: "btn solid",
+      onclick: (e) => act(e.target, () => api("/api/resume", {}).then(() => toast("Resumed."))) }, "Resume"));
   } else if (s.worker.running) {
     buttons.push(el("button", { class: "btn", title: "Complete the current step, then wait.",
       onclick: (e) => act(e.target, () => api("/api/pause", {}).then(() => toast("Pausing after the current step."))) }, "Pause"));
     if (s.transfer) buttons.push(el("button", { class: "btn", title: "Stop the download or upload now. It continues later.",
-      onclick: (e) => act(e.target, () => api("/api/pause", { now: true })) }, "Pause now"));
+      onclick: (e) => act(e.target, () => api("/api/pause", { now: true }).then(() => toast("Paused now."))) }, "Pause now"));
   }
   $("#controls").replaceChildren(...buttons);
 }
 
 function renderChannels(channels) {
-  $("#sync-all").hidden = channels.length === 0;
+  $("#sync-all").hidden = channels.length < 2;
   if (!channels.length) {
-    $("#channels").replaceChildren(el("li", { class: "empty" }, "No channels yet. Paste a channel URL below."));
+    $("#channels").replaceChildren(el("li", { class: "empty" }, "No channels yet. Paste a channel URL below to add one."));
     return;
   }
   $("#channels").replaceChildren(...channels.map((c) => el("li", {},
-    el("div", { class: "name" }, el("a", { href: c.url, target: "_blank", rel: "noopener" }, c.title || c.url),
-      el("div", { class: "meta" }, `prefix ${c.prefix || "–"} · ${nf.format(c.done)} of ${nf.format(c.total)} archived · checked ${fmtTime(c.last_synced_at)}`)),
-    el("button", { class: "btn small", onclick: (e) => act(e.target, async () => {
+    el("div", {}, el("div", { class: "name" }, el("a", { href: c.url, target: "_blank", rel: "noopener" }, c.title || c.url)),
+      el("div", { class: "meta" }, `${nf.format(c.done)} of ${nf.format(c.total)} archived. Prefix “${c.prefix || "none"}”. Checked ${fmtTime(c.last_synced_at)}.`)),
+    el("button", { class: "btn quiet", onclick: (e) => act(e.target, async () => {
       const [r] = await api("/api/sync", { channel_id: c.id });
-      toast(`${r.title}: ${r.added} new videos.`);
+      toast(`${r.title}: ${plural(r.added, "new video", "new videos")}.`);
     }, "Checking…") }, "Check for new videos"))));
 }
 
-// Banner with setup problems
+// Setup notice
 
 async function loadChecks() {
   const checks = await api("/api/doctor");
   $("#checks").replaceChildren(...checks.map((c) => el("li", { class: c.ok ? "ok" : "bad" },
-    el("span", { class: "mark" }, c.ok ? "✓" : "✗"),
-    el("div", {}, el("b", {}, c.name), " ", el("span", { class: "muted" }, c.detail),
+    el("span", { class: "mark", "aria-label": c.ok ? "Ready" : "Missing" }, c.ok ? "✓" : "✗"),
+    el("div", {}, el("b", {}, c.name), el("div", { class: "detail" }, c.detail),
       c.ok ? null : el("div", { class: "fix" }, c.fix)))));
   const problems = checks.filter((c) => !c.ok);
-  const banner = $("#banner");
-  banner.hidden = problems.length === 0;
-  banner.replaceChildren(el("b", {}, "Setup is not complete: "), problems.map((p) => p.name).join(", "), ".",
-    el("button", { class: "btn small", onclick: () => showTab("setup") }, "Open Setup"));
+  $("#notice").hidden = problems.length === 0;
+  $("#notice-text").textContent = `Missing: ${listSentence(problems.map((p) => p.name))}. The Setup section tells you how to fix it.`;
 }
+$("#notice-open").addEventListener("click", () => { showTab("setup"); $(".sections").scrollIntoView({ behavior: "smooth" }); });
 
-// Tabs
+// Sections
 
 let tab = "queue";
 function showTab(name) {
@@ -466,23 +616,23 @@ async function loadVideos() {
   $("#videos").replaceChildren(...rows.map((v) => {
     const problem = v.status === "failed" || v.status === "skipped";
     return el("tr", {},
-      el("td", { class: "title" }, v.title || "(no title)", el("br"),
-        el("a", { class: "mono", href: `https://www.youtube.com/watch?v=${v.video_id}`, target: "_blank", rel: "noopener" }, v.video_id)),
-      el("td", {}, el("span", { class: `badge s-${v.status}` }, el("span", { class: "dot" }), STATUS[v.status])),
-      el("td", {}, v.attempts),
-      el("td", { class: "detail" + (problem ? " err" : "") }, problem ? v.last_error :
-        v.ia_identifier ? el("a", { href: `https://archive.org/details/${v.ia_identifier}`, target: "_blank", rel: "noopener" }, v.ia_identifier) : ""));
+      el("td", { class: "title" }, v.title || "Untitled",
+        el("small", {}, el("a", { href: `https://www.youtube.com/watch?v=${v.video_id}`, target: "_blank", rel: "noopener" }, `youtube.com/watch?v=${v.video_id}`))),
+      el("td", { class: `status ${STATUS_CLASS[v.status] || ""}` }, STATUS[v.status]),
+      el("td", { class: "num" }, v.attempts),
+      el("td", { class: "detail" + (problem ? " problem" : "") }, problem ? v.last_error :
+        v.ia_identifier ? el("a", { href: `https://archive.org/details/${v.ia_identifier}`, target: "_blank", rel: "noopener" }, `archive.org/details/${v.ia_identifier}`) : ""));
   }));
 }
 $("#filter").addEventListener("change", loadVideos);
 $("#retry-failed").addEventListener("click", (e) => act(e.target, async () => {
-  const r = await api("/api/retry", {}); toast(`${r.count} videos are back in the queue.`); loadVideos();
+  const r = await api("/api/retry", {}); toast(`${plural(r.count, "video is", "videos are")} back in the queue.`); loadVideos();
 }));
 $("#retry-skipped").addEventListener("click", (e) => act(e.target, async () => {
-  const r = await api("/api/retry", { skipped: true }); toast(`${r.count} videos are back in the queue.`); loadVideos();
+  const r = await api("/api/retry", { skipped: true }); toast(`${plural(r.count, "video is", "videos are")} back in the queue.`); loadVideos();
 }));
 
-// Activity
+// Dispatches
 
 let lastEvent = 0;
 async function loadEvents() {
@@ -491,7 +641,7 @@ async function loadEvents() {
   lastEvent = events[events.length - 1].id;
   const list = $("#events");
   for (const ev of events) {
-    list.prepend(el("li", { class: ev.level }, el("time", {}, fmtTime(ev.ts)),
+    list.prepend(el("li", { class: ev.level }, el("time", { title: fmtTime(ev.ts) }, fmtClock(ev.ts)),
       el("span", { class: "msg" }, ev.video_id ? `${ev.video_id}: ${ev.message}` : ev.message)));
   }
   while (list.children.length > 300) list.lastChild.remove();
@@ -508,13 +658,13 @@ async function loadSettings() {
       try {
         const r = await api("/api/settings", { key: s.key, value: e.target.value });
         e.target.value = r.value;
-        toast(`Saved: ${SETTING_LABELS[s.key] || s.key}`);
+        toast(`Saved: ${SETTING_LABELS[s.key] || s.key}.`);
       } catch (err) { toast(err.message, true); loadSettings(); }
     };
     const input = SETTING_CHOICES[s.key]
       ? el("select", { id, onchange: save }, SETTING_CHOICES[s.key].map((o) =>
-          el("option", { value: o, selected: o === s.value }, o === "" ? "(none)" : o)))
-      : el("input", { id, value: s.value, placeholder: s.default || "(empty)", onchange: save });
+          el("option", { value: o, selected: o === s.value }, o === "" ? "None" : o)))
+      : el("input", { id, value: s.value, placeholder: s.default || "Empty", onchange: save });
     return el("div", { class: "setting" },
       el("label", { for: id }, SETTING_LABELS[s.key] || s.key), el("p", {}, s.help), el("div", { class: "input" }, input));
   }));
@@ -527,13 +677,13 @@ $("#add-form").addEventListener("submit", (e) => {
   act($("#add-btn"), async () => {
     const r = await api("/api/channels", { url: $("#add-url").value, prefix: $("#add-prefix").value });
     $("#add-url").value = ""; $("#add-prefix").value = "";
-    toast(`${r.title}: ${r.found} videos found, ${r.added} new. Prefix: ${r.prefix}`);
+    toast(`Added ${r.title}: ${plural(r.found, "video", "videos")} found, ${nf.format(r.added)} new. Prefix “${r.prefix}”.`);
     loadVideos();
-  }, "Reading video list…");
+  }, "Reading the video list…");
 });
 $("#sync-all").addEventListener("click", (e) => act(e.target, async () => {
   const results = await api("/api/sync", {});
-  toast(results.map((r) => `${r.title}: ${r.added} new`).join("\n"));
+  toast(results.map((r) => `${r.title}: ${plural(r.added, "new video", "new videos")}`).join("\n"));
 }, "Checking…"));
 $("#login-form").addEventListener("submit", (e) => {
   e.preventDefault();
@@ -549,14 +699,14 @@ let quitArmed = false;
 $("#quit").addEventListener("click", async (e) => {
   if (!quitArmed) {
     quitArmed = true;
-    e.target.textContent = state?.worker.in_ui ? "Click again: this also stops the worker" : "Click again to close";
+    e.target.textContent = state?.worker.in_ui ? "Click again to close ytia and stop the worker" : "Click again to close ytia";
     setTimeout(() => { quitArmed = false; e.target.textContent = "Close ytia"; }, 4000);
     return;
   }
   await api("/api/quit", {}).catch(() => {});
   clearInterval(timer);
-  document.body.replaceChildren(el("div", { class: "closed" }, el("h1", {}, "ytia is closed"),
-    el("p", { class: "muted" }, "You can close this tab. Start ytia again to continue from the same place.")));
+  document.body.replaceChildren(el("div", { class: "closed" }, el("h1", {}, "The Archive Record"),
+    el("p", {}, "ytia is closed. Start it again to continue from the same place.")));
 });
 
 // Polling
@@ -566,9 +716,9 @@ async function refresh() {
   try {
     renderState(await api("/api/state"));
     await loadEvents();
-    if (offline) { offline = false; toast("Connected again."); }
+    if (offline) { offline = false; toast("Connected to ytia again."); }
   } catch (e) {
-    if (!offline) { offline = true; toast("ytia does not respond. Is it still running?", true); }
+    if (!offline) { offline = true; toast("ytia does not respond. Check that it still runs.", true); }
   }
 }
 const timer = setInterval(() => {

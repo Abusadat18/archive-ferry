@@ -197,3 +197,5 @@ uv run ytia --help
 ## License
 
 To be decided before the first release. The `internetarchive` library uses AGPL-3.0.
+
+The web page uses three fonts that ship with ytia: Newsreader, Libre Franklin and UnifrakturMaguntia. All three use the SIL Open Font License 1.1. The license files are in `src/ytia/static/fonts/`. ytia does not load fonts from the internet.
