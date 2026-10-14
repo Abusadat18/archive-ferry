@@ -26,17 +26,17 @@ DEFAULTS: dict[str, str] = {
 HELP: dict[str, str] = {
     "format": "yt-dlp format selector.",
     "merge_format": "Container for merged video and audio: mp4, mkv or webm.",
-    "subtitles": "Download and upload subtitles (true/false).",
+    "subtitles": "Download and upload subtitles.",
     "cookies_file": "Path to a cookies.txt file for YouTube.",
-    "cookies_from_browser": "Read YouTube cookies from this browser, for example firefox or chrome.",
+    "cookies_from_browser": "Use this browser's YouTube login when YouTube blocks downloads. Firefox works best.",
     "js_runtime": "JavaScript runtime for yt-dlp: deno (default), node, bun or quickjs.",
     "rate_limit": "Maximum download speed, for example 5M. Empty means no limit.",
     "pause_between": "Seconds to wait between two videos.",
     "max_attempts": "Attempts for each video before the worker skips it.",
     "max_unverified": "Uploads that can wait for Internet Archive confirmation before the next download starts.",
     "min_free_gb": "The worker pauses when the free disk space is less than this.",
-    "keep_files": "Keep the video files on this computer after the upload (true/false). Default: delete them at once.",
-    "collection": "Internet Archive collection for new items.",
+    "keep_files": "Keep the video files on this computer after the upload. Default: delete them.",
+    "collection": "New accounts can upload only to opensource_movies.",
 }
 
 _BOOL_KEYS = {"subtitles", "keep_files"}

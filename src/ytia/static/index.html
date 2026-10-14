@@ -77,7 +77,6 @@
   .dateline { display: flex; align-items: center; gap: 12px 24px; flex-wrap: wrap; justify-content: space-between;
     border-top: 3px solid var(--ink); border-bottom: 1px solid var(--ink); padding: 7px 0;
     font-family: var(--grotesk); font-size: 13px; }
-  .dateline .tagline { font-family: var(--serif); font-style: italic; font-size: 15px; }
   .controls { display: flex; gap: 8px; flex-wrap: wrap; }
 
   /* Buttons and inputs */
@@ -97,8 +96,7 @@
   /* Notice to readers */
   .notice { margin-top: 18px; border: 1.5px solid var(--ink); padding: 12px 16px; display: flex; gap: 8px 16px;
     align-items: baseline; flex-wrap: wrap; background: var(--paper-inset); }
-  .notice h2 { font-size: 18px; font-style: italic; }
-  .notice p { flex: 1 1 320px; font-size: 16px; }
+  .notice p { flex: 1 1 260px; font-size: 16px; font-style: italic; }
 
   /* Front page */
   .front { display: grid; grid-template-columns: minmax(0, 2.1fr) minmax(260px, 1fr); gap: 0; margin-top: 22px; }
@@ -112,8 +110,6 @@
   .press-rule > div { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--spot); transition: width .8s ease; }
   .press figcaption { display: flex; justify-content: space-between; gap: 4px 16px; flex-wrap: wrap;
     font-family: var(--grotesk); font-size: 13px; margin-top: 6px; font-variant-numeric: tabular-nums; }
-  .story { margin-top: 22px; max-width: 64ch; font-size: 18px; line-height: 1.6; hyphens: auto; text-wrap: pretty; }
-  .story::first-letter { float: left; font-size: 3.55em; line-height: .82; font-weight: 700; padding: 6px 8px 0 0; }
 
   .sidebar { border-left: 1px solid var(--ink); padding-left: 24px; display: grid; gap: 26px; align-content: start; }
   .sidebar h3, .section-head h2 { font-size: 21px; font-weight: 650; border-bottom: 1px solid var(--ink); padding-bottom: 4px; margin-bottom: 8px; }
@@ -142,7 +138,6 @@
   .add-form { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; margin-top: 16px; }
   .add-form label { display: grid; gap: 2px; font-family: var(--grotesk); font-size: 12px; color: var(--ink-soft); }
   .add-form .url { flex: 3 1 300px; } .add-form .prefix { flex: 1 1 160px; }
-  .hint { font-size: 15px; font-style: italic; color: var(--ink-soft); margin-top: 8px; max-width: 80ch; }
 
   /* Section index */
   .sections { margin-top: 40px; border-top: 3px solid var(--ink); }
@@ -167,6 +162,11 @@
   td.num { font-family: var(--grotesk); font-size: 14px; font-variant-numeric: tabular-nums; text-align: right; padding-right: 18px; }
   td.detail { font-family: var(--grotesk); font-size: 13px; overflow-wrap: anywhere; max-width: 360px; }
   td.detail.problem { color: var(--bad); }
+  .clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  a.plain { color: inherit; text-decoration: none; }
+  a.plain:hover { text-decoration: underline; }
+  details.more { margin-top: 18px; }
+  details.more summary { font-family: var(--grotesk); font-size: 14px; font-weight: 600; cursor: pointer; padding: 6px 0; }
   .empty-note { font-style: italic; color: var(--ink-soft); padding: 12px 0; }
 
   .dispatches { list-style: none; margin: 0; padding: 0; max-height: 520px; overflow-y: auto; columns: 2 380px; column-gap: 32px; column-rule: 1px solid var(--hair); }
@@ -177,8 +177,8 @@
   .dispatches .error .msg { color: var(--bad); }
   .dispatches .success .msg { color: var(--ok); }
 
-  .settings { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); column-gap: 32px; }
-  .setting { display: grid; grid-template-columns: 1fr 180px; gap: 2px 16px; align-items: start; padding: 12px 0; border-bottom: 1px solid var(--hair); }
+  .settings { display: grid; max-width: 760px; }
+  .setting { display: grid; grid-template-columns: 1fr 240px; gap: 2px 24px; align-items: start; padding: 12px 0; border-bottom: 1px solid var(--hair); }
   .setting label { font-weight: 600; font-size: 17px; }
   .setting p { grid-column: 1; font-size: 15px; color: var(--ink-soft); line-height: 1.4; }
   .setting .input { grid-column: 2; grid-row: 1 / span 2; }
@@ -240,14 +240,12 @@
   </header>
   <div class="dateline">
     <span id="today"></span>
-    <span class="tagline">A YouTube channel, copied to the Internet Archive one video at a time</span>
     <div class="controls" id="controls"></div>
   </div>
 
   <aside class="notice" id="notice" hidden>
-    <h2>Setup is not complete.</h2>
     <p id="notice-text"></p>
-    <button class="btn quiet" id="notice-open">Open setup</button>
+    <button class="btn quiet" id="notice-open">Fix in Setup</button>
   </aside>
 
   <main class="front">
@@ -258,7 +256,6 @@
         <div class="press-rule" id="press-rule" role="progressbar" aria-valuemin="0" aria-valuemax="100"><div id="press-fill"></div></div>
         <figcaption><span id="press-left"></span><span id="press-right"></span></figcaption>
       </figure>
-      <p class="story" id="story"></p>
     </article>
 
     <aside class="sidebar">
@@ -266,9 +263,9 @@
         <h3>The queue</h3>
         <ul class="tally" id="tally"></ul>
       </section>
-      <section class="speeds">
+      <section class="speeds" id="speeds-section" hidden>
         <h3>Line speed</h3>
-        <div id="speeds"><p class="soft"><i>No transfer yet. The speeds show here after the first download and upload.</i></p></div>
+        <div id="speeds"></div>
       </section>
     </aside>
   </main>
@@ -276,15 +273,14 @@
   <section class="channels-section">
     <div class="section-head">
       <h2>Channels</h2>
-      <button class="btn quiet" id="sync-all" hidden>Check all channels for new videos</button>
+      <button class="btn quiet" id="sync-all" hidden>Check all for new videos</button>
     </div>
     <ul class="listings" id="channels"></ul>
     <form class="add-form" id="add-form">
       <label class="url">Channel URL<input id="add-url" placeholder="https://www.youtube.com/@yourchannel" required></label>
-      <label class="prefix">Item prefix (optional)<input id="add-prefix" placeholder="yourchannel"></label>
+      <label class="prefix" title="Each video becomes archive.org/details/prefix-videoID. You cannot change it after the first upload.">Prefix (optional)<input id="add-prefix" placeholder="yourchannel"></label>
       <button class="btn solid" id="add-btn">Add channel</button>
     </form>
-    <p class="hint">Each video becomes archive.org/details/prefix-videoID. You cannot change the prefix after the first upload.</p>
   </section>
 
   <section class="sections">
@@ -308,12 +304,12 @@
           <option value="failed">Will retry</option>
           <option value="skipped">Skipped</option>
         </select>
-        <button class="btn quiet" id="retry-failed">Retry failed videos now</button>
-        <button class="btn quiet" id="retry-skipped">Retry skipped videos</button>
+        <button class="btn quiet" id="retry-failed" hidden>Retry failed now</button>
+        <button class="btn quiet" id="retry-skipped" hidden>Retry skipped</button>
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Video</th><th>Status</th><th style="text-align:right;padding-right:18px">Tries</th><th>Archive item or problem</th></tr></thead>
+          <thead><tr><th>Video</th><th>Status</th><th style="text-align:right;padding-right:18px">Tries</th><th>Archive</th></tr></thead>
           <tbody id="videos"></tbody>
         </table>
       </div>
@@ -322,11 +318,15 @@
 
     <div class="panel" data-panel="activity" hidden>
       <ol class="dispatches" id="events"></ol>
-      <p class="empty-note" id="events-empty">No dispatches yet. Events show here when the worker runs.</p>
+      <p class="empty-note" id="events-empty">No dispatches yet.</p>
     </div>
 
     <div class="panel" data-panel="settings" hidden>
       <div class="settings" id="settings"></div>
+      <details class="more">
+        <summary>More settings</summary>
+        <div class="settings" id="more-settings"></div>
+      </details>
     </div>
 
     <div class="panel" data-panel="setup" hidden>
@@ -334,13 +334,12 @@
         <ul class="checks" id="checks"></ul>
         <div class="login">
           <h3>Internet Archive account</h3>
-          <p>Your password goes only to archive.org. ytia keeps the upload keys that archive.org sends back, not the password.</p>
+          <p>Your password goes only to archive.org.</p>
           <form id="login-form">
             <input id="login-email" type="email" placeholder="E-mail" autocomplete="username" aria-label="E-mail" required>
             <input id="login-password" type="password" placeholder="Password" autocomplete="current-password" aria-label="Password" required>
             <button class="btn solid">Log in</button>
           </form>
-          <p>If YouTube asks you to confirm that you are not a bot, open Settings and choose Firefox in “YouTube cookies from browser”. Log in to YouTube in Firefox first.</p>
         </div>
       </div>
     </div>
@@ -368,6 +367,8 @@ const SETTING_LABELS = {
   max_attempts: "Attempts per video", max_unverified: "Uploads waiting for confirmation",
   min_free_gb: "Minimum free disk space (GB)", keep_files: "Keep local files", collection: "Internet Archive collection",
 };
+const COMMON_SETTINGS = ["cookies_from_browser", "keep_files", "rate_limit", "collection"];
+const CHOICE_LABELS = { "": "None", true: "Yes", false: "No" };
 const SETTING_CHOICES = {
   merge_format: ["mp4", "mkv", "webm"],
   subtitles: ["true", "false"], keep_files: ["false", "true"],
@@ -455,47 +456,25 @@ function frontPage(s) {
   const c = s.counts, done = c.done, total = s.total;
   const t = s.transfer;
   if (t) {
-    const sent = t.phase === "download" ? "downloaded" : "sent";
     return {
-      headline: t.phase === "download" ? `Downloading “${t.title}” from YouTube` : `Uploading “${t.title}” to the Internet Archive`,
-      deck: t.total
-        ? `${fmtSize(t.done)} of ${fmtSize(t.total)} ${sent} at ${fmtSpeed(t.speed)}. ${fmtEta(t.eta)}.`
-        : `${fmtSize(t.done)} ${sent} at ${fmtSpeed(t.speed)}.`,
+      headline: t.phase === "download" ? `Downloading “${t.title}”` : `Uploading “${t.title}”`,
+      deck: [t.total ? `${fmtSize(t.done)} of ${fmtSize(t.total)}` : fmtSize(t.done),
+        t.speed ? `${fmtSize(t.speed)}/s` : null, t.total && t.eta != null ? fmtEta(t.eta).toLowerCase() : null].filter(Boolean).join(", "),
       percent: t.total ? Math.min(100, t.done * 100 / t.total) : 0,
-      left: t.phase === "download" ? "This download" : "This upload",
+      left: t.phase === "download" ? "From YouTube" : "To the Internet Archive",
       right: t.total ? `${Math.floor(t.done * 100 / t.total)}%` : "",
     };
   }
   const archive = {
     percent: total ? done * 100 / total : 0,
-    left: "The whole archive",
+    left: "Archive progress",
     right: total ? `${Math.floor(done * 100 / total)}%` : "",
   };
-  if (!total) return { ...archive, headline: "Add a YouTube channel to start the archive",
-    deck: "Paste the channel URL under Channels. ytia reads the list of videos, then copies them one at a time." };
-  if (done === total) return { ...archive, headline: `All ${plural(total, "video is", "videos are")} in the Internet Archive`,
-    deck: "Check the channels for new videos after the next upload on YouTube." };
-  if (s.worker.running && s.paused) return { ...archive, headline: "The archive is paused",
-    deck: "The current step is complete. Resume to continue with the next video." };
-  if (s.worker.running) return { ...archive, headline: s.activity, deck: "The next transfer starts soon." };
-  return { ...archive, headline: s.paused ? "The worker is stopped and the queue is paused" : "The worker is stopped",
-    deck: `Start it to continue. ${plural(c.pending + c.failed, "video waits", "videos wait")} in the queue.` };
-}
-
-function storyText(s) {
-  const c = s.counts, total = s.total;
-  if (!total) return "There are no videos in the queue yet. When you add a channel, every video, short and stream goes in the queue, oldest first.";
-  // Start with a word, not a figure, because the first letter becomes the drop cap.
-  const first = `The Internet Archive now holds ${nf.format(c.done)} of ${plural(total, "video", "videos")} from this queue.`;
-  const rest = [];
-  if (c.pending) rest.push(`${nf.format(c.pending)} ${c.pending === 1 ? "waits" : "wait"} in the queue`);
-  const busy = c.downloading + c.downloaded + c.uploading;
-  if (busy) rest.push(`${nf.format(busy)} ${busy === 1 ? "is" : "are"} in progress`);
-  if (c.uploaded) rest.push(`${nf.format(c.uploaded)} ${c.uploaded === 1 ? "waits" : "wait"} for the Internet Archive to confirm`);
-  if (c.failed) rest.push(`${nf.format(c.failed)} will be retried`);
-  if (c.skipped) rest.push(`${nf.format(c.skipped)} ${c.skipped === 1 ? "was" : "were"} skipped`);
-  const second = rest.length ? ` Of the others, ${listSentence(rest)}.` : "";
-  return `${first}${second} After each upload, ytia deletes the local copy and keeps only a record of the video, so a check for new videos never uploads it again.`;
+  if (!total) return { ...archive, headline: "Add a channel to start", deck: "Paste its URL under Channels." };
+  if (done === total) return { ...archive, headline: "Every video is archived", deck: "" };
+  if (s.worker.running && s.paused) return { ...archive, headline: "Paused", deck: "Click Resume to continue." };
+  if (s.worker.running) return { ...archive, headline: s.activity.replace(/:.*$/, ""), deck: "" };
+  return { ...archive, headline: "Stopped", deck: `Click Start to continue. ${plural(c.pending + c.failed, "video waits", "videos wait")}.` };
 }
 
 function renderState(s) {
@@ -503,23 +482,25 @@ function renderState(s) {
   const page = frontPage(s);
   $("#headline").textContent = page.headline;
   $("#deck").textContent = page.deck;
+  $("#deck").hidden = !page.deck;
   $("#press-fill").style.width = `${page.percent}%`;
   $("#press-rule").setAttribute("aria-valuenow", Math.floor(page.percent));
   $("#press-rule").setAttribute("aria-label", page.left);
   $("#press-left").textContent = page.left;
   $("#press-right").textContent = page.right;
-  $("#story").textContent = storyText(s);
 
   const worker = $("#ear-worker");
   worker.textContent = !s.worker.running ? "Stopped" : s.paused ? "Paused" : s.worker.in_ui ? "Working" : "Working in a terminal";
   worker.className = s.worker.running && !s.paused ? "live" : "";
   $("#ear-count").textContent = s.total ? `${nf.format(s.counts.done)} of ${nf.format(s.total)}` : "No videos yet";
-  $("#colophon").textContent = `Set in Newsreader and Libre Franklin. Printed on this computer from ${s.home}. ytia ${s.version}.`;
+  $("#colophon").textContent = `ytia ${s.version}. Data in ${s.home}`;
+  $("#retry-failed").hidden = !s.counts.failed;
+  $("#retry-skipped").hidden = !s.counts.skipped;
 
   const rows = [["done", "Archived"], ["pending", "Waiting"], ["downloading", "Downloading"], ["downloaded", "Downloaded"],
     ["uploading", "Uploading"], ["uploaded", "Confirming"], ["failed", "Will retry"], ["skipped", "Skipped"]];
   $("#tally").replaceChildren(
-    ...rows.filter(([key]) => key === "done" || key === "pending" || s.counts[key]).map(([key, label]) =>
+    ...rows.filter(([key]) => key === "done" || s.counts[key]).map(([key, label]) =>
       el("li", { class: key === "failed" || key === "skipped" ? "problem" : null }, label, el("span", { class: "n" }, nf.format(s.counts[key])))),
     el("li", { class: "total" }, "All videos", el("span", { class: "n" }, nf.format(s.total))));
 
@@ -533,11 +514,11 @@ function renderState(s) {
 
 function renderSpeeds(speeds) {
   const parts = [];
-  for (const [key, label] of [["download", "Download from YouTube"], ["upload", "Upload to the Internet Archive"]]) {
-    if (speeds[key]) parts.push(el("p", {}, `${label}: `, el("b", {}, fmtSpeed(speeds[key].bps)),
-      el("small", {}, `Measured ${fmtTime(speeds[key].at)}`)));
+  for (const [key, label] of [["download", "Download"], ["upload", "Upload"]]) {
+    if (speeds[key]) parts.push(el("p", { title: `Measured ${fmtTime(speeds[key].at)}` }, `${label} `, el("b", {}, fmtSpeed(speeds[key].bps))));
   }
-  if (parts.length) $("#speeds").replaceChildren(...parts);
+  $("#speeds-section").hidden = parts.length === 0;
+  $("#speeds").replaceChildren(...parts);
 }
 
 function renderControls(s) {
@@ -568,12 +549,13 @@ function renderControls(s) {
 function renderChannels(channels) {
   $("#sync-all").hidden = channels.length < 2;
   if (!channels.length) {
-    $("#channels").replaceChildren(el("li", { class: "empty" }, "No channels yet. Paste a channel URL below to add one."));
+    $("#channels").replaceChildren(el("li", { class: "empty" }, "No channels yet."));
     return;
   }
   $("#channels").replaceChildren(...channels.map((c) => el("li", {},
     el("div", {}, el("div", { class: "name" }, el("a", { href: c.url, target: "_blank", rel: "noopener" }, c.title || c.url)),
-      el("div", { class: "meta" }, `${nf.format(c.done)} of ${nf.format(c.total)} archived. Prefix “${c.prefix || "none"}”. Checked ${fmtTime(c.last_synced_at)}.`)),
+      el("div", { class: "meta", title: `Prefix “${c.prefix || "none"}”. Checked ${fmtTime(c.last_synced_at)}.` },
+        `${nf.format(c.done)} of ${nf.format(c.total)} archived`)),
     el("button", { class: "btn quiet", onclick: (e) => act(e.target, async () => {
       const [r] = await api("/api/sync", { channel_id: c.id });
       toast(`${r.title}: ${plural(r.added, "new video", "new videos")}.`);
@@ -586,11 +568,11 @@ async function loadChecks() {
   const checks = await api("/api/doctor");
   $("#checks").replaceChildren(...checks.map((c) => el("li", { class: c.ok ? "ok" : "bad" },
     el("span", { class: "mark", "aria-label": c.ok ? "Ready" : "Missing" }, c.ok ? "✓" : "✗"),
-    el("div", {}, el("b", {}, c.name), el("div", { class: "detail" }, c.detail),
+    el("div", { title: c.detail }, el("b", {}, c.name),
       c.ok ? null : el("div", { class: "fix" }, c.fix)))));
   const problems = checks.filter((c) => !c.ok);
   $("#notice").hidden = problems.length === 0;
-  $("#notice-text").textContent = `Missing: ${listSentence(problems.map((p) => p.name))}. The Setup section tells you how to fix it.`;
+  $("#notice-text").textContent = `Setup: ${listSentence(problems.map((p) => p.name))} ${problems.length === 1 ? "is" : "are"} missing.`;
 }
 $("#notice-open").addEventListener("click", () => { showTab("setup"); $(".sections").scrollIntoView({ behavior: "smooth" }); });
 
@@ -616,12 +598,13 @@ async function loadVideos() {
   $("#videos").replaceChildren(...rows.map((v) => {
     const problem = v.status === "failed" || v.status === "skipped";
     return el("tr", {},
-      el("td", { class: "title" }, v.title || "Untitled",
-        el("small", {}, el("a", { href: `https://www.youtube.com/watch?v=${v.video_id}`, target: "_blank", rel: "noopener" }, `youtube.com/watch?v=${v.video_id}`))),
+      el("td", { class: "title" }, el("a", { class: "plain", href: `https://www.youtube.com/watch?v=${v.video_id}`,
+        target: "_blank", rel: "noopener", title: "Open on YouTube" }, v.title || v.video_id)),
       el("td", { class: `status ${STATUS_CLASS[v.status] || ""}` }, STATUS[v.status]),
-      el("td", { class: "num" }, v.attempts),
-      el("td", { class: "detail" + (problem ? " problem" : "") }, problem ? v.last_error :
-        v.ia_identifier ? el("a", { href: `https://archive.org/details/${v.ia_identifier}`, target: "_blank", rel: "noopener" }, `archive.org/details/${v.ia_identifier}`) : ""));
+      el("td", { class: "num" }, v.attempts || ""),
+      el("td", { class: "detail" + (problem ? " problem" : ""), title: problem ? v.last_error : null }, problem ? el("span", { class: "clamp" }, v.last_error) :
+        v.ia_identifier && (v.status === "done" || v.status === "uploaded")
+          ? el("a", { href: `https://archive.org/details/${v.ia_identifier}`, target: "_blank", rel: "noopener", title: v.ia_identifier }, "Open item") : ""));
   }));
 }
 $("#filter").addEventListener("change", loadVideos);
@@ -652,7 +635,7 @@ async function loadEvents() {
 
 async function loadSettings() {
   const settings = await api("/api/settings");
-  $("#settings").replaceChildren(...settings.map((s) => {
+  const rows = settings.map((s) => {
     const id = `set-${s.key}`;
     const save = async (e) => {
       try {
@@ -663,11 +646,15 @@ async function loadSettings() {
     };
     const input = SETTING_CHOICES[s.key]
       ? el("select", { id, onchange: save }, SETTING_CHOICES[s.key].map((o) =>
-          el("option", { value: o, selected: o === s.value }, o === "" ? "None" : o)))
+          el("option", { value: o, selected: o === s.value }, CHOICE_LABELS[o] ?? o)))
       : el("input", { id, value: s.value, placeholder: s.default || "Empty", onchange: save });
-    return el("div", { class: "setting" },
-      el("label", { for: id }, SETTING_LABELS[s.key] || s.key), el("p", {}, s.help), el("div", { class: "input" }, input));
-  }));
+    return [s.key, el("div", { class: "setting" },
+      el("label", { for: id }, SETTING_LABELS[s.key] || s.key), el("p", {}, s.help), el("div", { class: "input" }, input))];
+  });
+  const common = rows.filter(([key]) => COMMON_SETTINGS.includes(key)).map(([, node]) => node);
+  const more = rows.filter(([key]) => !COMMON_SETTINGS.includes(key)).map(([, node]) => node);
+  $("#settings").replaceChildren(...common);
+  $("#more-settings").replaceChildren(...more);
 }
 
 // Forms
